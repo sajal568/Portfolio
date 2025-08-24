@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #ff6b35;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #cccccc;
+            font-size: 1rem;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .chart-container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #333;
+        }
+        
+        .chart-title {
+            color: #ff6b35;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .device-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        
+        .device-item {
+            text-align: center;
+        }
+        
+        .device-count {
+            font-size: 2rem;
+            color: #ff6b35;
+            font-weight: bold;
+        }
+        
+        .top-pages {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #333;
+        }
+        
+        .page-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .page-item:last-child {
+            border-bottom: none;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 20px auto;
+            display: block;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+        
+        .loading {
+            text-align: center;
+            color: #cccccc;
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>📊 Portfolio Analytics Dashboard</h1>
+            <p>Real-time insights into your website performance</p>
+            <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh Data</button>
+        </div>
+        
+        <div id="loading" class="loading">Loading analytics data...</div>
+        
+        <div id="dashboard-content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalVisitors">-</div>
+                    <div class="stat-label">Total Visitors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="uniqueVisitors">-</div>
+                    <div class="stat-label">Unique Visitors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="hireRequests">-</div>
+                    <div class="stat-label">Hire Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="newsletterSubs">-</div>
+                    <div class="stat-label">Newsletter Subscriptions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="contactMessages">-</div>
+                    <div class="stat-label">Contact Messages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="conversionRate">-</div>
+                    <div class="stat-label">Conversion Rate</div>
+                </div>
+            </div>
+            
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">Device Breakdown</h3>
+                    <div class="device-stats">
+                        <div class="device-item">
+                            <div class="device-count" id="desktopCount">-</div>
+                            <div>Desktop</div>
+                        </div>
+                        <div class="device-item">
+                            <div class="device-count" id="mobileCount">-</div>
+                            <div>Mobile</div>
+                        </div>
+                        <div class="device-item">
+                            <div class="device-count" id="tabletCount">-</div>
+                            <div>Tablet</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Quick Stats</h3>
+                    <div class="device-stats">
+                        <div class="device-item">
+                            <div class="device-count" id="todayVisitors">-</div>
+                            <div>Today's Visitors</div>
+                        </div>
+                        <div class="device-item">
+                            <div class="device-count" id="cvDownloads">-</div>
+                            <div>CV Downloads</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="top-pages">
+                <h3 class="chart-title">Top Pages</h3>
+                <div id="topPagesList">
+                    <!-- Pages will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5500/api/analytics';
+        
+        async function loadDashboard() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'none';
+            
+            try {
+                // Load dashboard data
+                const response = await fetch(`${API_URL}/dashboard?days=30`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateDashboard(data.data);
+                }
+                
+                // Load quick stats
+                const statsResponse = await fetch(`${API_URL}/stats`);
+                const statsData = await statsResponse.json();
+                
+                if (statsData.success) {
+                    updateQuickStats(statsData.data);
+                }
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('loading').innerHTML = '❌ Error loading data. Make sure the server is running.';
+            }
+        }
+        
+        function updateDashboard(data) {
+            const { summary, deviceBreakdown, topPages } = data;
+            
+            // Update summary stats
+            document.getElementById('totalVisitors').textContent = summary.totalVisitors;
+            document.getElementById('uniqueVisitors').textContent = summary.uniqueVisitors;
+            document.getElementById('hireRequests').textContent = summary.hireRequests;
+            document.getElementById('newsletterSubs').textContent = summary.newsletterSubscriptions;
+            document.getElementById('contactMessages').textContent = summary.contactMessages;
+            document.getElementById('conversionRate').textContent = summary.conversionRate + '%';
+            
+            // Update device breakdown
+            const devices = { desktop: 0, mobile: 0, tablet: 0 };
+            deviceBreakdown.forEach(device => {
+                devices[device._id] = device.count;
+            });
+            
+            document.getElementById('desktopCount').textContent = devices.desktop;
+            document.getElementById('mobileCount').textContent = devices.mobile;
+            document.getElementById('tabletCount').textContent = devices.tablet;
+            
+            // Update top pages
+            const topPagesList = document.getElementById('topPagesList');
+            topPagesList.innerHTML = '';
+            
+            topPages.forEach(page => {
+                const pageItem = document.createElement('div');
+                pageItem.className = 'page-item';
+                pageItem.innerHTML = `
+                    <span>${page._id || 'Homepage'}</span>
+                    <span>${page.views} views</span>
+                `;
+                topPagesList.appendChild(pageItem);
+            });
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+        }
+        
+        function updateQuickStats(data) {
+            document.getElementById('todayVisitors').textContent = data.todayVisitors;
+            document.getElementById('cvDownloads').textContent = data.totalNewsletterSubscriptions; // Using newsletter as CV downloads for now
+        }
+        
+        // Load dashboard on page load
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+        
+        // Auto-refresh every 5 minutes
+        setInterval(loadDashboard, 5 * 60 * 1000);
+
+        // Refresh when a new hire request is created (triggered from main site via localStorage)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'hireRequestCreated') {
+                loadDashboard();
+            }
+        });
+    </script>
+</body>
+</html>

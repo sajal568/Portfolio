@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sazal Shrestha</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <img src="images/manish.png" alt="Fawzi Sayed" class="logo-img">
+                    <span class="logo-text">Sazal</span>
+                </div>
+                
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#home" class="nav-link active">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#about" class="nav-link">About Me</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#services" class="nav-link">Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#projects" class="nav-link">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#testimonials" class="nav-link">Testimonials</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#contact" class="nav-link">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link download-cv">Download CV</a>
+                    </li>
+                </ul>
+                
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <p class="hero-greeting">Hi I am</p>
+                        <h1 class="hero-name">Sazal Shrestha</h1>
+                        <h2 class="hero-title">
+                            <span class="typewriter-text" id="typewriter"></span>
+                            <span class="cursor" id="cursor">|</span>
+                        </h2>
+                        <p class="hero-description">
+                            I make things look good, sound fun, and occasionally work as intended. Lover of coffee, chaos, and random ideas that somehow feel brilliant at 2 AM. Welcome to my little corner of the internet—no deadlines, just vibes.
+                        </p>
+                        <button class="cta-button" id="hireMeBtn">Hire Me</button>
+                    </div>
+                </div>
+                
+                <div class="hero-image">
+                    <div class="profile-container">
+                        <img src="images/Sazal.jpg" alt="Fawzi Sayed" class="profile-img">
+                        <div class="social-icons">
+                            <a href="https://www.facebook.com/sazalshrestha1" class="social-link" aria-label="Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="https://github.com/sajal568" class="social-link" aria-label="Github">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            <a href="https://www.instagram.com/sazal.shrestha/" class="social-link" aria-label="Instagram">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="https://www.linkedin.com/in/sajal-shrestha-683a33266/" class="social-link" aria-label="LinkedIn">
+                                <i class="fab fa-linkedin-in"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about">
+            <div class="about-container">
+                <div class="about-image">
+                    <img src="images/Sazal.jpg" alt="About Sazal Shrestha" class="about-img">
+                </div>
+                <div class="about-content">
+                    <h2 class="about-title">About Me</h2>
+                    <p class="about-description">
+                        Curious mind wandering through life | Professional overthinker of snacks | Collector of random trivia and useless facts
+                    </p>
+                    <div class="skills">
+                        <div class="skill-item">
+                            <div class="skill-header">
+                                <span class="skill-name">Snack Tasting</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="90%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-header">
+                                <span class="skill-name">Meme Analysis</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="85%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-header">
+                                <span class="skill-name">Napping Expertise</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="95%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-header">
+                                <span class="skill-name">Random Fact Collector</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="80%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="services" class="services">
+            <div class="services-container">
+                <div class="services-header">
+                    <h2 class="services-title">Services</h2>
+                    <p class="services-description">
+                        Things I dabble in when not overthinking snacks or memes
+                    </p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <h3 class="service-title">Snack Sampling</h3>
+                        <p class="service-description">
+                            Expert at trying every snack in sight. Crunchy, spicy, or sweet—no snack left behind!
+                        </p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-laugh"></i>
+                        </div>
+                        <h3 class="service-title">Meme Analysis</h3>
+                        <p class="service-description">
+                            Analyzing memes like a PhD student analyzing quantum physics. Laughs guaranteed.
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-bed"></i>
+                        </div>
+                        <h3 class="service-title">Napping Techniques</h3>
+                        <p class="service-description">
+                            Full-time napper, part-time dreamer. Mastering the art of power naps.
+                        </p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <h3 class="service-title">Random Fact Collection</h3>
+                        <p class="service-description">
+                            Collector of weird, useless facts. Did you know octopuses have three hearts?
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="projects" class="projects">
+            <div class="projects-container">
+                <div class="projects-header">
+                    <h2 class="projects-title">My Projects</h2>
+                    <p class="projects-description">
+                        A collection of my most important life achievements and groundbreaking innovations
+                    </p>
+                </div>
+                
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="snack-apps">Snack Apps</button>
+                    <button class="filter-btn" data-filter="nap-platforms">Nap Platforms</button>
+                    <button class="filter-btn" data-filter="meme-tools">Meme Tools</button>
+                    <button class="filter-btn" data-filter="life-hacks">Life Hacks</button>
+                </div>
+                
+                <div class="projects-grid">
+                    <div class="project-card" data-category="nap-platforms">
+                        <div class="project-image">
+                            <img src="images/roomfinder.png" alt="Ultimate Nap Spot Finder">
+                            <div class="project-overlay">
+                                <div class="project-links">
+                                    <a href="#" class="project-link" aria-label="View Project">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="project-link" aria-label="External Link">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="project-info">
+                            <span class="project-category">Nap Platforms</span>
+                            <h3 class="project-title">Ultimate Nap Spot Finder</h3>
+                            <p class="project-description" style="color: black;">Revolutionary platform for discovering the perfect napping locations. Features comfort ratings, noise levels, and pillow availability.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="project-card" data-category="life-hacks">
+                        <div class="project-image">
+                            <img src="images/workout.png" alt="Procrastination Workout App">
+                            <div class="project-overlay">
+                                <div class="project-links">
+                                    <a href="#" class="project-link" aria-label="View Project">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="project-link" aria-label="External Link">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="project-info">
+                            <span class="project-category">Life Hacks</span>
+                            <h3 class="project-title">Procrastination Workout App</h3>
+                            <p class="project-description" style="color: black;">Innovative fitness app that turns avoiding responsibilities into exercise. Burn calories while dodging deadlines!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="project-card" data-category="snack-apps">
+                        <div class="project-image">
+                            <img src="images/Screenshot 2023-05-23 at 6.55.11 PM.webp" alt="Snack Rating Platform">
+                            <div class="project-overlay">
+                                <div class="project-links">
+                                    <a href="#" class="project-link" aria-label="View Project">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="project-link" aria-label="External Link">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="project-info">
+                            <span class="project-category">Sleepiness</span>
+                            <h3 class="project-title">Music Exploring Platform</h3>
+                            <p class="project-description" style="color: black;">Comprehensive snack evaluation system with crunch factor analysis, flavor profiles, and midnight munchie compatibility scores.</p>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </section>
+
+        <section id="testimonials" class="testimonials">
+            <div class="testimonials-container">
+                <div class="testimonials-header">
+                    <h2 class="testimonials-title">What People Say</h2>
+                    <p class="testimonials-description">
+                        Real reviews from satisfied customers of my unique life services and groundbreaking innovations
+                    </p>
+                </div>
+                
+                <div class="testimonials-slider">
+                    <div class="testimonials-wrapper">
+                        <div class="testimonial-slide active">
+                            <div class="testimonial-card">
+                                <div class="testimonial-content">
+                                    <div class="quote-icon">
+                                        <i class="fas fa-quote-left"></i>
+                                    </div>
+                                    <p class="testimonial-text">
+                                        "Sazal's snack evaluation skills are unmatched! His comprehensive analysis of my entire pantry, including the crunch-to-flavor ratio calculations, revolutionized my midnight munchie game. 10/10 would recommend for all snack-related emergencies!"
+                                    </p>
+                                    <div class="testimonial-author">
+                                        <div class="author-image">
+                                            <img src="images/5555.png" alt="Snack Monster">
+                                        </div>
+                                        <div class="author-info">
+                                            <h4 class="author-name">Prakaran Pandey</h4>
+                                            <p class="author-position">Another Enthusiast</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="testimonial-slide">
+                            <div class="testimonial-card">
+                                <div class="testimonial-content">
+                                    <div class="quote-icon">
+                                        <i class="fas fa-quote-left"></i>
+                                    </div>
+                                    <p class="testimonial-text">
+                                        "I hired Sazal to find the perfect nap spots in my office building. His detailed comfort ratings, noise level analysis, and pillow compatibility charts helped me achieve a 347% increase in power nap efficiency. Absolute game-changer!"
+                                    </p>
+                                    <div class="testimonial-author">
+                                        <div class="author-image">
+                                            <img src="images/Shasank.jpg" alt="Nap Guru">
+                                        </div>
+                                        <div class="author-info">
+                                            <h4 class="author-name">Shasank Shrestha</h4>
+                                            <p class="author-position">Daanab Sahab</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="testimonial-slide">
+                            <div class="testimonial-card">
+                                <div class="testimonial-content">
+                                    <div class="quote-icon">
+                                        <i class="fas fa-quote-left"></i>
+                                    </div>
+                                    <p class="testimonial-text">
+                                        "Sazal's meme analysis is PhD-level brilliant! His viral potential algorithms and dad joke detection system helped me curate the perfect meme collection. My social media engagement went through the roof. Pure genius!"
+                                    </p>
+                                    <div class="testimonial-author">
+                                        <div class="author-image">
+                                            <img src="images/ROKA.jpg" alt="Meme Analyst">
+                                        </div>
+                                        <div class="author-info">
+                                            <h4 class="author-name">Prazwol Roka</h4>
+                                            <p class="author-position">Rokaa PVT</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="testimonial-slide">
+                            <div class="testimonial-card">
+                                <div class="testimonial-content">
+                                    <div class="quote-icon">
+                                        <i class="fas fa-quote-left"></i>
+                                    </div>
+                                    <p class="testimonial-text">
+                                        "Sazal's random fact collection service is absolutely mind-blowing! Did you know octopuses have three hearts? Neither did I until he shared 847 other equally fascinating and completely useless facts. Best conversation starter investment ever!"
+                                    </p>
+                                    <div class="testimonial-author">
+                                        <div class="author-image">
+                                            <img src="images/Biraj.jpg" alt="Trivia Queen">
+                                        </div>
+                                        <div class="author-info">
+                                            <h4 class="author-name">Biraj Rana</h4>
+                                            <p class="author-position">Khai K HO</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-controls">
+                        <button class="slider-btn prev-btn" aria-label="Previous testimonial">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="slider-btn next-btn" aria-label="Next testimonial">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="slider-dots">
+                        <span class="dot active" data-slide="0"></span>
+                        <span class="dot" data-slide="1"></span>
+                        <span class="dot" data-slide="2"></span>
+                        <span class="dot" data-slide="3"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact">
+            <div class="contact-container">
+                <div class="contact-header">
+                    <h2 class="contact-title">Lets Design Together</h2>
+                    <p class="contact-description">Let’s Collaborate… or Just Laught Together</p>
+                </div>
+                <div class="contact-form">
+                    <form class="contact-form-wrapper" id="contactForm">
+                        <div class="form-group">
+                            <input type="email" id="emailInput" class="email-input" placeholder="Enter Your Email" required>
+                            <button type="submit" class="contact-btn">Contact Me</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h3 class="logo-text">SAZAL<span class="logo-highlight" style="color: orangered;">NAPPER</span></h3>
+                </div>
+                <nav class="footer-nav">
+                    <ul class="footer-nav-list">
+                        <li><a href="#home" class="footer-nav-link">Home</a></li>
+                        <li><a href="#about" class="footer-nav-link">About Me</a></li>
+                        <li><a href="#services" class="footer-nav-link">Services</a></li>
+                        <li><a href="#projects" class="footer-nav-link">Projects</a></li>
+                        <li><a href="#testimonials" class="footer-nav-link">Testimonials</a></li>
+                        <li><a href="#contact" class="footer-nav-link">Contact</a></li>
+                    </ul>
+                </nav>
+                <div class="footer-social">
+                    <a href="https://www.facebook.com/sazalshrestha1" class="social-link" aria-label="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://github.com/sajal568" class="social-link" aria-label="Github">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://www.instagram.com/sazal.shrestha/" class="social-link" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/sajal-shrestha-683a33266/" class="social-link" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">&copy; 2024 <span class="highlight">SAZAL</span>. All Rights Reserved , Inc.</p>
+            </div>
+        </div>
+        </div>
+    </footer>
+
+    <!-- Logo Lightbox Modal -->
+    <div id="logoModal" class="modal" aria-hidden="true">
+        <div class="modal-content image-modal">
+            <span class="close-btn" id="closeLogoModal" aria-label="Close">&times;</span>
+            <img src="images/manish.png" alt="Logo" class="logo-modal-img" id="logoModalImg" />
+        </div>
+    </div>
+
+    <!-- Hire Me Modal -->
+    <div id="hireMeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Let's Work Together!</h2>
+                <span class="close-btn" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Ready to bring your project to life? Fill out the form below and let's create something amazing together!</p>
+                
+                <form id="hireMeForm" class="hire-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name *</label>
+                            <input type="text" id="firstName" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name *</label>
+                            <input type="text" id="lastName" name="lastName" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="company">Company/Organization</label>
+                        <input type="text" id="company" name="company">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="projectType">Project Type *</label>
+                            <select id="projectType" name="projectType" required>
+                                <option value="">Select Project Type</option>
+                                <option value="snack-consulting">Snack Consulting</option>
+                                <option value="nap-optimization">Nap Optimization</option>
+                                <option value="meme-analysis">Meme Analysis</option>
+                                <option value="random-facts">Random Facts Collection</option>
+                                <option value="life-coaching">Life Coaching</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="budget">Budget Range</label>
+                            <select id="budget" name="budget">
+                                <option value="">Select Budget</option>
+                                <option value="under-1000">Under $1,000</option>
+                                <option value="1000-5000">$1,000 - $5,000</option>
+                                <option value="5000-10000">$5,000 - $10,000</option>
+                                <option value="10000-plus">$10,000+</option>
+                                <option value="negotiable">Negotiable</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timeline">Project Timeline</label>
+                        <select id="timeline" name="timeline">
+                            <option value="">Select Timeline</option>
+                            <option value="asap">ASAP (Rush Job)</option>
+                            <option value="1-week">Within 1 Week</option>
+                            <option value="1-month">Within 1 Month</option>
+                            <option value="3-months">Within 3 Months</option>
+                            <option value="flexible">Flexible</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectDescription">Project Description *</label>
+                        <textarea id="projectDescription" name="projectDescription" rows="5" placeholder="Tell me about your project, goals, and any specific requirements..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additionalInfo">Additional Information</label>
+                        <textarea id="additionalInfo" name="additionalInfo" rows="3" placeholder="Any other details you'd like to share?"></textarea>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="newsletter" name="newsletter">
+                            <span class="checkmark"></span>
+                            Subscribe to my newsletter for random facts and snack reviews
+                        </label>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn-primary">Send Proposal Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="public/js/analytics.js"></script>
+</body>
+</html>
