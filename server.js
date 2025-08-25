@@ -51,12 +51,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Admin auth routes (before static)
-const { router: adminRoutes, authMiddleware } = require('./routes/admin');
+const { router: adminRoutes, authMiddleware, verifyToken } = require('./routes/admin');
 app.use('/api/admin', adminRoutes);
 
-// Protect admin dashboard HTML explicitly
-app.get('/admin/dashboard.html', authMiddleware, (req, res) => {
-    return res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
+// Protect admin dashboard HTML with redirect instead of JSON 401
+app.get('/admin/dashboard.html', (req, res) => {
+    try {
+        const token = req.cookies && req.cookies['admintoken'];
+        if (!token) return res.redirect('/admin/login.html');
+        verifyToken(token); // throws if invalid/expired
+        return res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
+    } catch (_) {
+        return res.redirect('/admin/login.html');
+    }
 });
 
 // Serve static files

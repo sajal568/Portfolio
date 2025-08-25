@@ -7,6 +7,7 @@ const router = express.Router();
 
 const COOKIE_NAME = 'admintoken';
 const JWT_TTL_SECONDS = 60 * 60 * 8; // 8 hours
+const isProd = process.env.NODE_ENV === 'production';
 
 function signToken(payload) {
   const secret = process.env.JWT_SECRET || 'dev_insecure_secret_change_me';
@@ -47,8 +48,9 @@ router.post('/login', async (req, res) => {
     const token = signToken({ id: admin._id.toString(), username: admin.username });
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd,
+      path: '/',
       maxAge: JWT_TTL_SECONDS * 1000
     });
     return res.json({ success: true });
@@ -65,8 +67,8 @@ router.get('/me', authMiddleware, async (req, res) => {
 
 // POST /api/admin/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie(COOKIE_NAME);
+  res.clearCookie(COOKIE_NAME, { path: '/', sameSite: isProd ? 'none' : 'lax', secure: isProd });
   return res.json({ success: true });
 });
 
-module.exports = { router, authMiddleware };
+module.exports = { router, authMiddleware, verifyToken };
