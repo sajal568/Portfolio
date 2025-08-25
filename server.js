@@ -48,6 +48,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files
 app.use(express.static('.'));
+app.use(express.static(path.join(__dirname, 'public'))); // serves /public/*
+app.use('/admin', express.static(path.join(__dirname, 'admin'))); // /admin/*
+
+// Root route -> index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI, {
@@ -103,7 +110,7 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
+    res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
 // Start server
@@ -111,9 +118,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
     console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
 });
-app.use(express.static(path.join(__dirname, 'public'))); // serves /public/*
-app.use('/admin', express.static(path.join(__dirname, 'admin'))); // /admin/*
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+
 
