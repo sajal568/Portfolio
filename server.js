@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -47,6 +48,16 @@ app.use(rateLimit({
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// Admin auth routes (before static)
+const { router: adminRoutes, authMiddleware } = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
+
+// Protect admin dashboard HTML explicitly
+app.get('/admin/dashboard.html', authMiddleware, (req, res) => {
+    return res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
+});
 
 // Serve static files
 app.use(express.static('.'));
@@ -75,6 +86,22 @@ const startServer = async () => {
             conn.on('disconnected', () => console.log('🔌 MongoDB disconnected'));
             conn.on('reconnected', () => console.log('♻️  MongoDB reconnected'));
             conn.on('error', (e) => console.error('❗ MongoDB error:', e.message));
+
+            // Seed default admin if none exists
+            try {
+                const Admin = require('./models/Admin');
+                const bcrypt = require('bcryptjs');
+                const count = await Admin.countDocuments();
+                if (count === 0) {
+                    const username = process.env.ADMIN_USERNAME || 'admin';
+                    const password = process.env.ADMIN_PASSWORD || 'ChangeMe@123';
+                    const passwordHash = await bcrypt.hash(password, 10);
+                    await Admin.create({ username, passwordHash });
+                    console.log(`👤 Seeded default admin -> username: ${username} | password: ${password}`);
+                }
+            } catch (seedErr) {
+                console.warn('Admin seed skipped:', seedErr?.message || seedErr);
+            }
         } else {
             console.log('ℹ️  Starting server without MongoDB connection.');
         }
