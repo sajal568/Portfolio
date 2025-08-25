@@ -111,7 +111,6 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
     console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
 });
-const path = require('path');
 app.use(express.static(path.join(__dirname, 'public'))); // serves /public/*
 app.use('/admin', express.static(path.join(__dirname, 'admin'))); // /admin/*
 app.get('/', (req, res) => {
