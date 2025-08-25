@@ -87,6 +87,97 @@ const postWithFallback = async (path, payload) => {
     throw lastError || new Error('Request failed');
 };
 
+// Scroll/Load reveal animations
+const initScrollReveal = () => {
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return; // don't animate
+
+    const addReveal = (elements, options = {}) => {
+        const { direction = 'up', stagger = 80, startIndex = 0 } = options;
+        const dirClass = direction === 'left' ? 'reveal-left' : direction === 'right' ? 'reveal-right' : '';
+        elements.forEach((el, i) => {
+            el.classList.add('reveal-on-scroll');
+            if (dirClass) el.classList.add(dirClass);
+            const delay = (startIndex + i) * stagger;
+            el.style.setProperty('--reveal-delay', `${delay}ms`);
+            observer.observe(el);
+        });
+    };
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('in');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { root: null, threshold: 0.1 });
+
+    // Hero
+    addReveal(Array.from(document.querySelectorAll('.hero-text > *')), { stagger: 80 });
+    addReveal([document.querySelector('.profile-container')].filter(Boolean), { direction: 'right', stagger: 0 });
+
+    // About
+    addReveal([document.querySelector('.about-image')].filter(Boolean), { direction: 'left' });
+    addReveal(Array.from(document.querySelectorAll('.about-content > *')), { stagger: 80 });
+    addReveal(Array.from(document.querySelectorAll('.skills .skill-item')), { stagger: 60, startIndex: 2 });
+
+    // Services
+    addReveal(Array.from(document.querySelectorAll('.services-title, .services-description')), { stagger: 80 });
+    addReveal(Array.from(document.querySelectorAll('.service-card')), { stagger: 120 });
+
+    // Projects
+    addReveal(Array.from(document.querySelectorAll('.projects-title, .projects-description')), { stagger: 80 });
+    addReveal(Array.from(document.querySelectorAll('.filter-btn')), { stagger: 60 });
+    addReveal(Array.from(document.querySelectorAll('.project-card')), { stagger: 120 });
+
+    // Testimonials header only (slides animate separately)
+    addReveal(Array.from(document.querySelectorAll('.testimonials-title, .testimonials-description')), { stagger: 80 });
+
+    // Contact
+    addReveal(Array.from(document.querySelectorAll('.contact-title, .contact-description')), { stagger: 80 });
+    addReveal(Array.from(document.querySelectorAll('.contact .form-group, .contact .form-actions')), { stagger: 80 });
+
+    // Footer
+    addReveal(Array.from(document.querySelectorAll('.footer .footer-content > *')), { stagger: 80 });
+};
+// Theme toggle (dark/light)
+const initThemeToggle = () => {
+    const root = document.documentElement; // <html>
+    const btn = document.getElementById('themeToggle');
+    const icon = btn ? btn.querySelector('.icon') : null;
+    const label = btn ? btn.querySelector('.label') : null;
+
+    const getStored = () => {
+        try { return localStorage.getItem('theme'); } catch(_) { return null; }
+    };
+    const store = (t) => { try { localStorage.setItem('theme', t); } catch(_) {} };
+
+    const apply = (t) => {
+        root.setAttribute('data-theme', t);
+        if (icon) {
+            icon.classList.toggle('fa-sun', t === 'light');
+            icon.classList.toggle('fa-moon', t === 'dark');
+        }
+        if (label) label.textContent = t === 'light' ? 'Light' : 'Dark';
+    };
+
+    let theme = getStored() || 'dark';
+    apply(theme);
+
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        theme = theme === 'dark' ? 'light' : 'dark';
+        apply(theme);
+        store(theme);
+        // Close mobile menu if open
+        const hamburger = document.querySelector('.hamburger');
+        const navMenu = document.querySelector('.nav-menu');
+        hamburger && hamburger.classList.remove('active');
+        navMenu && navMenu.classList.remove('active');
+    });
+};
+
 // Logo image lightbox modal
 const initLogoLightbox = () => {
     const logo = document.querySelector('.nav-logo .logo-img');
@@ -719,4 +810,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try { initHireForm(); } catch (e) { console.warn('initHireForm error:', e); }
     try { initTestimonialsSlider(); } catch (e) { console.warn('initTestimonialsSlider error:', e); }
     try { initLogoLightbox(); } catch (e) { console.warn('initLogoLightbox error:', e); }
+    try { initThemeToggle(); } catch (e) { console.warn('initThemeToggle error:', e); }
+    try { initScrollReveal(); } catch (e) { console.warn('initScrollReveal error:', e); }
 });

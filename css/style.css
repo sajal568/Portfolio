@@ -1,4 +1,23 @@
 /* Reset and Base Styles */
+:root[data-theme="dark"] {
+    --bg-color: #121212;
+    --card-bg: #1d1d1d;
+    --text-color: #ffffff;
+    --text-light: #cccccc;
+    --accent-color: #ff6b35;
+    --border-color: rgba(255, 255, 255, 0.12);
+    --overlay-bg: rgba(0,0,0,0.8);
+}
+
+:root[data-theme="light"] {
+    --bg-color: #f5f7fb;        /* slightly white, soft */
+    --card-bg: #ffffff;
+    --text-color: #1f2328;      /* dark text */
+    --text-light: #4f5864;      /* muted text */
+    --accent-color: #ff6b35;    /* keep brand accent */
+    --border-color: rgba(15, 23, 42, 0.12);
+    --overlay-bg: rgba(0,0,0,0.6);
+}
 * {
     margin: 0;
     padding: 0;
@@ -8,8 +27,8 @@
 body {
     font-family: 'Arial', sans-serif;
     line-height: 1.6;
-    color: #ffffff;
-    background-color: #1a1a1a;
+    color: var(--text-color);
+    background-color: var(--bg-color);
     overflow-x: hidden;
 }
 
@@ -24,12 +43,12 @@ header {
     position: fixed;
     top: 0;
     width: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.08);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     z-index: 1000;
     padding: 1rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -44,6 +63,13 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* Controls wrapper: theme toggle + hamburger */
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .nav-logo {
@@ -77,7 +103,7 @@ header {
 }
 
 .nav-link {
-    color: #cccccc;
+    color: var(--text-light);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s ease;
@@ -90,7 +116,7 @@ header {
 }
 
 .download-cv {
-    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    background: linear-gradient(45deg, var(--accent-color), #f7931e);
     color: #ffffff !important;
     padding: 0.75rem 1.5rem;
     border-radius: 25px;
@@ -122,7 +148,7 @@ header {
     display: flex;
     align-items: center;
     padding-top: 100px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(135deg, var(--bg-color) 0%, var(--card-bg) 100%);
     position: relative;
 }
 
@@ -163,7 +189,7 @@ header {
 .hero-name {
     font-size: 3rem;
     font-weight: bold;
-    color: #ff6b35;
+    color: var(--accent-color);
     margin-bottom: 0.5rem;
     line-height: 1.2;
 }
@@ -171,21 +197,21 @@ header {
 .hero-title {
     font-size: 4rem;
     font-weight: bold;
-    color: #ffffff;
+    color: var(--text-color);
     margin-bottom: 1.5rem;
     line-height: 1.1;
 }
 
 .hero-description {
     font-size: 1.1rem;
-    color: #cccccc;
+    color: var(--text-light);
     margin-bottom: 2rem;
     line-height: 1.6;
     max-width: 500px;
 }
 
 .cta-button {
-    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    background: linear-gradient(45deg, var(--accent-color), #f7931e);
     color: #ffffff;
     border: none;
     padding: 1rem 2rem;
@@ -256,7 +282,7 @@ header {
 /* About Section */
 .about {
     padding: 5rem 0;
-    background-color: #2d2d2d;
+    background-color: var(--bg-color);
 }
 
 .about-container {
@@ -284,20 +310,20 @@ header {
 }
 
 .about-content {
-    color: #ffffff;
+    color: var(--text-color);
 }
 
 .about-title {
     font-size: 3rem;
     font-weight: bold;
-    color: #ffffff;
+    color: var(--text-color);
     margin-bottom: 1.5rem;
     line-height: 1.2;
 }
 
 .about-description {
     font-size: 1.1rem;
-    color: #cccccc;
+    color: var(--text-light);
     margin-bottom: 3rem;
     line-height: 1.6;
 }
@@ -322,13 +348,13 @@ header {
 .skill-name {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-color);
 }
 
 .skill-bar {
     width: 100%;
     height: 8px;
-    background-color: #4a4a4a;
+    background-color: var(--border-color);
     border-radius: 4px;
     overflow: hidden;
     position: relative;
@@ -351,7 +377,7 @@ header {
     transform: translateY(-50%);
     width: 12px;
     height: 12px;
-    background: #ffffff;
+    background: var(--text-color);
     border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -359,7 +385,7 @@ header {
 /* Services Section */
 .services {
     padding: 5rem 0;
-    background-color: #1a1a1a;
+    background-color: var(--bg-color);
 }
 
 .services-container {
@@ -376,14 +402,14 @@ header {
 .services-title {
     font-size: 3rem;
     font-weight: bold;
-    color: #ffffff;
+    color: var(--text-color);
     margin-bottom: 1.5rem;
     line-height: 1.2;
 }
 
 .services-description {
     font-size: 1.1rem;
-    color: #cccccc;
+    color: var(--text-light);
     line-height: 1.6;
     max-width: 600px;
     margin: 0 auto;
@@ -436,14 +462,14 @@ header {
 .service-title {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #1a1a1a;
+    color: var(--text-color);
     margin-bottom: 1rem;
     line-height: 1.3;
 }
 
 .service-description {
     font-size: 1rem;
-    color: black;
+    color: var(--text-light);
     line-height: 1.6;
 }
 
@@ -507,11 +533,43 @@ header {
     }
 }
 
+/* Scroll/Load Reveal Utilities */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 600ms ease, transform 600ms ease;
+}
+.reveal-on-scroll.in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Directional variants */
+.reveal-left { transform: translateX(-24px); }
+.reveal-right { transform: translateX(24px); }
+.reveal-left.in, .reveal-right.in { transform: translateX(0); }
+
+/* Stagger support: use --reveal-delay on elements */
+.reveal-on-scroll { transition-delay: var(--reveal-delay, 0ms); }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .reveal-on-scroll,
+    .reveal-left,
+    .reveal-right {
+        transition: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+    }
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .hamburger {
         display: flex;
     }
+
+    .nav-controls { gap: 8px; }
 
     .nav-menu {
         position: fixed;
@@ -608,6 +666,9 @@ header {
 }
 
 @media (max-width: 480px) {
+    /* Compact theme toggle on very small screens */
+    .theme-toggle { padding: 6px 10px; }
+    .theme-toggle .label { display: none; }
     .hero-name {
         font-size: 2rem;
     }
@@ -638,7 +699,7 @@ header {
 /* Projects Section */
 .projects {
     padding: 5rem 0;
-    background-color: #2d2d2d;
+    background-color: var(--bg-color);
 }
 
 .projects-container {
@@ -655,14 +716,14 @@ header {
 .projects-title {
     font-size: 3rem;
     font-weight: bold;
-    color: #ffffff;
+    color: var(--text-color);
     margin-bottom: 1.5rem;
     line-height: 1.2;
 }
 
 .projects-description {
     font-size: 1.1rem;
-    color: #cccccc;
+    color: var(--text-light);
     line-height: 1.6;
     max-width: 600px;
     margin: 0 auto;
@@ -678,9 +739,9 @@ header {
 
 .filter-btn {
     padding: 0.75rem 1.5rem;
-    border: 2px solid #4a4a4a;
+    border: 2px solid var(--border-color);
     background-color: transparent;
-    color: #cccccc;
+    color: var(--text-light);
     border-radius: 25px;
     font-size: 1rem;
     font-weight: 500;
@@ -725,7 +786,7 @@ header {
 .project-card {
     flex: 0 0 350px;
     max-width: 350px;
-    background-color: grey;
+    background-color: var(--card-bg);
     border-radius: 15px;
     overflow: hidden;
     transition: all 0.4s ease;
@@ -751,7 +812,7 @@ header {
     height: 280px;
     overflow: hidden;
     position: relative;
-    background-color: #f5f5f5;
+    background-color: var(--card-bg);
 }
 
 .project-image img {
@@ -771,7 +832,7 @@ header {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(26, 26, 26, 0.8);
+    background: var(--overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -796,7 +857,7 @@ header {
     height: 50px;
     background: linear-gradient(45deg, #ff6b35, #f7931e);
     border-radius: 50%;
-    color: black;
+    color: var(--text-color);
     text-decoration: none;
     transition: all 0.3s ease;
     transform: translateY(20px);
@@ -822,7 +883,7 @@ header {
 .project-category {
     display: inline-block;
     background: linear-gradient(45deg, #ff6b35, #f7931e);
-    color: black;
+    color: var(--text-color);
     padding: 0.25rem 0.75rem;
     border-radius: 15px;
     font-size: 0.875rem;
@@ -832,12 +893,12 @@ header {
     letter-spacing: 0.5px;
 }
 .project-description{
-    color: black;
+    color: var(--text-light);
 }
 .project-title {
     font-size: 1.25rem;
     font-weight: bold;
-    color: #1a1a1a;
+    color: var(--text-color);
     line-height: 1.4;
     margin: 0;
     transition: color 0.3s ease;
@@ -1251,8 +1312,33 @@ header {
 .footer {
     background: var(--card-bg);
     padding: 60px 0 30px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-color);
 }
+
+/* Theme Toggle Button */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); }
+.theme-toggle .icon { font-size: 1rem; }
+
+/* Ensure it looks good within the nav menu on mobile */
+.theme-toggle-item { display: flex; align-items: center; }
+.nav-menu .theme-toggle { width: 100%; justify-content: center; }
+
+/* Light mode adjustments for certain accents if needed */
+[data-theme="light"] .slider-btn { box-shadow: 0 5px 15px rgba(255, 107, 53, 0.2); }
+[data-theme="light"] .project-description { color: var(--text-light); }
 
 .footer-container {
     max-width: 1200px;
@@ -1608,7 +1694,7 @@ header {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--overlay-bg);
     backdrop-filter: blur(5px);
 }
 

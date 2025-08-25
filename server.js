@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -67,6 +69,20 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/email', emailTestRoutes);
 
+// CV download route
+const CV_PATH = path.join(__dirname, 'public', 'cv', 'resume.pdf');
+app.get('/cv', (req, res) => {
+    try {
+        if (!fs.existsSync(CV_PATH)) {
+            return res.status(404).json({ message: 'CV not found. Place your file at public/cv/resume.pdf' });
+        }
+        return res.download(CV_PATH, 'Resume.pdf');
+    } catch (err) {
+        console.error('CV download error:', err);
+        return res.status(500).json({ message: 'Failed to download CV' });
+    }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ 
@@ -95,3 +111,10 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
     console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
 });
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public'))); // serves /public/*
+app.use('/admin', express.static(path.join(__dirname, 'admin'))); // /admin/*
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
