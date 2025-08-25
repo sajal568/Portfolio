@@ -59,9 +59,40 @@ app.get('/', (req, res) => {
 });
 
 // MongoDB connection (single connect, no deprecated options)
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch(err => console.error('❌ MongoDB connection error:', err));
+if (!process.env.MONGODB_URI) {
+    console.warn('⚠️  MONGODB_URI is not set. Database will be Disconnected.');
+}
+
+const startServer = async () => {
+    try {
+        if (process.env.MONGODB_URI) {
+            const mongoUri = process.env.MONGODB_URI;
+            const mongoDbName = process.env.MONGODB_DB || undefined;
+            await mongoose.connect(mongoUri, mongoDbName ? { dbName: mongoDbName } : undefined);
+            console.log(`✅ Connected to MongoDB${mongoDbName ? ` (db: ${mongoDbName})` : ''}`);
+            // Connection state logging
+            const conn = mongoose.connection;
+            conn.on('disconnected', () => console.log('🔌 MongoDB disconnected'));
+            conn.on('reconnected', () => console.log('♻️  MongoDB reconnected'));
+            conn.on('error', (e) => console.error('❗ MongoDB error:', e.message));
+        } else {
+            console.log('ℹ️  Starting server without MongoDB connection.');
+        }
+
+        // Start server only after attempting DB connect
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
+            console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
+        });
+    } catch (err) {
+        console.error('❌ MongoDB connection error:', err);
+        // Still start the server so /api/health can report Disconnected
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running (DB disconnected) on http://127.0.0.1:${PORT}`);
+            console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
+        });
+    }
+};
 
 // Import routes
 const hireRoutes = require('./routes/hire');
@@ -91,10 +122,13 @@ app.get('/cv', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+    const state = mongoose.connection.readyState; // 0=disconnected,1=connected,2=connecting,3=disconnecting
+    const stateName = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'][state] || 'Unknown';
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
-        database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
+        database: stateName,
+        readyState: state
     });
 });
 
@@ -112,8 +146,5 @@ app.use('*', (req, res) => {
     res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
-    console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
-});
+// Start server (after DB connect attempt)
+startServer();

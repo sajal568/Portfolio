@@ -207,3 +207,4 @@ router.get('/stats', ensureDB, async (req, res) => {
     }
 });
 
+module.exports = router;
