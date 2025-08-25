@@ -26,6 +26,12 @@ const analyticsSchema = new mongoose.Schema({
     browser: String,
     os: String,
     
+    // Optional identity (when known via forms)
+    name: String,
+    email: String,
+    contactId: { type: mongoose.Schema.Types.ObjectId, ref: 'Contact' },
+    hireRequestId: { type: mongoose.Schema.Types.ObjectId, ref: 'HireRequest' },
+    
     // Visit Details
     visitDate: {
         type: Date,
@@ -100,6 +106,7 @@ analyticsSchema.index({ visitDate: -1 });
 analyticsSchema.index({ ipAddress: 1 });
 analyticsSchema.index({ hiredMe: 1 });
 analyticsSchema.index({ subscribedNewsletter: 1 });
+analyticsSchema.index({ email: 1 });
 
 // Daily Summary Schema for aggregated data
 const dailySummarySchema = new mongoose.Schema({
