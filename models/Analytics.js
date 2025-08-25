@@ -98,7 +98,6 @@ const analyticsSchema = new mongoose.Schema({
 // Indexes for better performance
 analyticsSchema.index({ visitDate: -1 });
 analyticsSchema.index({ ipAddress: 1 });
-analyticsSchema.index({ sessionId: 1 });
 analyticsSchema.index({ hiredMe: 1 });
 analyticsSchema.index({ subscribedNewsletter: 1 });
 
