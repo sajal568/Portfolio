@@ -8,11 +8,13 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
+// Trust the first proxy (Render)
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5500;
+const isDev = process.env.NODE_ENV !== 'production';
 
 // Security middleware with CSP suitable for local dev
 app.use(helmet({
-    // NOTE: Relaxed for local development. Tighten in production.
     contentSecurityPolicy: {
         useDefaults: true,
         directives: {
@@ -21,7 +23,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
             imgSrc: ["'self'", 'data:'],
             fontSrc: ["'self'", 'https://cdnjs.cloudflare.com', 'data:'],
-            connectSrc: ["'self'", 'http://127.0.0.1:5500'],
+            connectSrc: ["'self'", ...(isDev ? ['http://127.0.0.1:5500'] : [])],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: null,
         },
@@ -31,16 +33,16 @@ app.use(cors({
     origin: ['http://127.0.0.1:5500', 'file://'],
     credentials: true
 }));
-// Handle preflight requests globally
 app.options('*', cors());
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+// Rate limiting (respects X-Forwarded-For via trust proxy)
+app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,   // return rate limit info in the RateLimit-* headers
+    legacyHeaders: false,    // disable the X-RateLimit-* headers
     message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
+}));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -48,21 +50,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files
 app.use(express.static('.'));
-app.use(express.static(path.join(__dirname, 'public'))); // serves /public/*
-app.use('/admin', express.static(path.join(__dirname, 'admin'))); // /admin/*
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
 // Root route -> index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('✅ Connected to MongoDB'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+// MongoDB connection (single connect, no deprecated options)
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Import routes
 const hireRoutes = require('./routes/hire');
@@ -92,8 +91,8 @@ app.get('/cv', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
         database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
     });
@@ -102,8 +101,8 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ 
-        message: 'Something went wrong!', 
+    res.status(500).json({
+        message: 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
 });
@@ -118,11 +117,3 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
     console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
 });
-
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('✅ Connected to MongoDB'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
-

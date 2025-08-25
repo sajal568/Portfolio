@@ -17,7 +17,17 @@ class PortfolioAnalytics {
     }
     
     async init() {
-        // Resolve API base by probing health endpoints
+        // If running on a typical static local server (Live Server 5500), disable analytics to avoid 404 spam
+        const isStaticLocal = (
+            (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+            window.location.port === '5500'
+        );
+        if (isStaticLocal) {
+            this.enabled = false;
+            return;
+        }
+
+        // Resolve API base by probing health endpoints (production or other hosts)
         await this.resolveApiBase();
         if (this.apiBase) {
             this.apiUrl = `${this.apiBase}/api/analytics`;
@@ -52,11 +62,18 @@ class PortfolioAnalytics {
     }
 
     async resolveApiBase() {
-        const candidates = [
-            'http://localhost:5500',
-            'http://127.0.0.1:5500',
-            window.location.origin
-        ].filter((v, i, a) => a.indexOf(v) === i); // unique
+        // Prefer same-origin first. Only use localhost fallbacks in local dev/file protocol.
+        const isLocalEnv = (
+            window.location.protocol === 'file:' ||
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1'
+        );
+
+        const baseList = isLocalEnv
+            ? [window.location.origin, 'http://localhost:5500', 'http://127.0.0.1:5500']
+            : [window.location.origin];
+
+        const candidates = baseList.filter((v, i, a) => a.indexOf(v) === i); // unique
 
         for (const base of candidates) {
             try {

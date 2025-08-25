@@ -63,13 +63,29 @@ window.addEventListener('load', () => {
     document.body.style.opacity = '1';
 });
 
-// Helper: POST with fallback API bases (current origin, localhost:5500, 127.0.0.1:5500)
+// Helper: POST with fallback API bases
 const postWithFallback = async (path, payload) => {
-    const candidates = [
-        window.location.origin,
-        'http://localhost:5500',
-        'http://127.0.0.1:5500'
-    ].filter((v, i, a) => a.indexOf(v) === i);
+    const isLocalEnv = (
+        window.location.protocol === 'file:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1'
+    );
+    const isStaticLocal5500 = (
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+        window.location.port === '5500'
+    );
+    // In static local 5500 scenario (e.g., Live Server), prefer typical Node ports first
+    const localCandidates = [
+        'http://localhost:3000', 'http://127.0.0.1:3000',
+        'http://localhost:8080', 'http://127.0.0.1:8080',
+        'http://localhost:5500', 'http://127.0.0.1:5500',
+        window.location.origin
+    ];
+    const baseList = isLocalEnv
+        ? (isStaticLocal5500 ? localCandidates : [window.location.origin, ...localCandidates])
+        : [window.location.origin];
+    const candidates = baseList.filter((v, i, a) => a.indexOf(v) === i);
+
     let lastError;
     for (const base of candidates) {
         try {

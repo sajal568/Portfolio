@@ -3,10 +3,12 @@ const router = express.Router();
 const { Analytics, DailySummary } = require('../models/Analytics');
 const rateLimit = require('express-rate-limit');
 
-// Rate limiting for analytics tracking
+// Rate limiting for analytics tracking (proxy-friendly)
 const analyticsLimit = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 100, // limit each IP to 100 analytics requests per minute
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { error: 'Too many analytics requests.' }
 });
 
@@ -36,18 +38,23 @@ const getBrowserInfo = (userAgent) => {
     return { browser, os };
 };
 
-// POST /api/analytics/visit - Track new visitor
-router.post('/visit', analyticsLimit, async (req, res) => {
+// Middleware to ensure DB is connected
+const ensureDB = (req, res, next) => {
+    if (require('mongoose').connection.readyState !== 1) {
+        return res.status(500).json({ success: false, message: 'Database disconnected' });
+    }
+    next();
+};
+
+// POST /visit
+router.post('/visit', analyticsLimit, ensureDB, async (req, res) => {
     try {
         const { sessionId, referrer, utmSource, utmMedium, utmCampaign } = req.body;
         const userAgent = req.get('User-Agent') || '';
         const { browser, os } = getBrowserInfo(userAgent);
-        
-        // Check if session already exists
         let analytics = await Analytics.findOne({ sessionId });
-        
+
         if (!analytics) {
-            // Create new analytics record
             analytics = new Analytics({
                 sessionId,
                 ipAddress: req.ip,
@@ -60,10 +67,8 @@ router.post('/visit', analyticsLimit, async (req, res) => {
                 utmMedium,
                 utmCampaign
             });
-            
             await analytics.save();
         }
-        
         res.json({ success: true, sessionId: analytics.sessionId });
     } catch (error) {
         console.error('❌ Error tracking visit:', error);
@@ -71,30 +76,17 @@ router.post('/visit', analyticsLimit, async (req, res) => {
     }
 });
 
-// POST /api/analytics/page-view - Track page view
-router.post('/page-view', analyticsLimit, async (req, res) => {
+// POST /page-view
+router.post('/page-view', analyticsLimit, ensureDB, async (req, res) => {
     try {
         const { sessionId, page, timeSpent } = req.body;
-        
         const analytics = await Analytics.findOne({ sessionId });
-        if (!analytics) {
-            return res.status(404).json({ success: false, message: 'Session not found' });
-        }
-        
-        // Add page view
-        analytics.pageViews.push({
-            page,
-            timeSpent: timeSpent || 0
-        });
-        
-        // Update total time spent
-        if (timeSpent) {
-            analytics.totalTimeSpent += timeSpent;
-        }
-        
+        if (!analytics) return res.status(404).json({ success: false, message: 'Session not found' });
+
+        analytics.pageViews.push({ page, timeSpent: timeSpent || 0 });
+        if (timeSpent) analytics.totalTimeSpent += timeSpent;
         analytics.lastActivity = new Date();
         await analytics.save();
-        
         res.json({ success: true });
     } catch (error) {
         console.error('❌ Error tracking page view:', error);
@@ -102,46 +94,25 @@ router.post('/page-view', analyticsLimit, async (req, res) => {
     }
 });
 
-// POST /api/analytics/action - Track user action
-router.post('/action', analyticsLimit, async (req, res) => {
+// POST /action
+router.post('/action', analyticsLimit, ensureDB, async (req, res) => {
     try {
         const { sessionId, type, element, data } = req.body;
-        
         const analytics = await Analytics.findOne({ sessionId });
-        if (!analytics) {
-            return res.status(404).json({ success: false, message: 'Session not found' });
+        if (!analytics) return res.status(404).json({ success: false, message: 'Session not found' });
+
+        analytics.actions.push({ type, element, data });
+
+        if (type === 'form_submit') {
+            if (element === 'hire-form') analytics.hiredMe = true;
+            if (element === 'contact-form') analytics.contactedMe = true;
+            if (element === 'newsletter-form') analytics.subscribedNewsletter = true;
+        } else if (type === 'download' && element === 'cv-download') {
+            analytics.downloadedCV = true;
         }
-        
-        // Add action
-        analytics.actions.push({
-            type,
-            element,
-            data
-        });
-        
-        // Update conversion flags based on action
-        switch (type) {
-            case 'form_submit':
-                if (element === 'hire-form') {
-                    analytics.hiredMe = true;
-                }
-                if (element === 'contact-form') {
-                    analytics.contactedMe = true;
-                }
-                if (element === 'newsletter-form') {
-                    analytics.subscribedNewsletter = true;
-                }
-                break;
-            case 'download':
-                if (element === 'cv-download') {
-                    analytics.downloadedCV = true;
-                }
-                break;
-        }
-        
+
         analytics.lastActivity = new Date();
         await analytics.save();
-        
         res.json({ success: true });
     } catch (error) {
         console.error('❌ Error tracking action:', error);
@@ -149,28 +120,25 @@ router.post('/action', analyticsLimit, async (req, res) => {
     }
 });
 
-// GET /api/analytics/dashboard - Get analytics dashboard data
-router.get('/dashboard', async (req, res) => {
+// GET /dashboard
+router.get('/dashboard', ensureDB, async (req, res) => {
     try {
         const { days = 30 } = req.query;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - parseInt(days));
-        
-        // Get basic stats
+
         const totalVisitors = await Analytics.countDocuments({ visitDate: { $gte: startDate } });
-        const uniqueVisitors = await Analytics.distinct('ipAddress', { visitDate: { $gte: startDate } }).then(ips => ips.length);
+        const uniqueVisitors = await Analytics.distinct('ipAddress', { visitDate: { $gte: startDate } }).then(a => a.length);
         const hireRequests = await Analytics.countDocuments({ hiredMe: true, visitDate: { $gte: startDate } });
         const newsletterSubs = await Analytics.countDocuments({ subscribedNewsletter: true, visitDate: { $gte: startDate } });
         const contactMessages = await Analytics.countDocuments({ contactedMe: true, visitDate: { $gte: startDate } });
         const cvDownloads = await Analytics.countDocuments({ downloadedCV: true, visitDate: { $gte: startDate } });
-        
-        // Get device breakdown
+
         const deviceStats = await Analytics.aggregate([
             { $match: { visitDate: { $gte: startDate } } },
             { $group: { _id: '$device', count: { $sum: 1 } } }
         ]);
-        
-        // Get top pages
+
         const topPages = await Analytics.aggregate([
             { $match: { visitDate: { $gte: startDate } } },
             { $unwind: '$pageViews' },
@@ -178,21 +146,18 @@ router.get('/dashboard', async (req, res) => {
             { $sort: { views: -1 } },
             { $limit: 10 }
         ]);
-        
-        // Get daily visitors for chart
+
         const dailyVisitors = await Analytics.aggregate([
             { $match: { visitDate: { $gte: startDate } } },
-            {
-                $group: {
-                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$visitDate' } },
-                    visitors: { $sum: 1 },
-                    uniqueVisitors: { $addToSet: '$ipAddress' }
-                }
-            },
+            { $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$visitDate' } },
+                visitors: { $sum: 1 },
+                uniqueVisitors: { $addToSet: '$ipAddress' }
+            }},
             { $addFields: { uniqueCount: { $size: '$uniqueVisitors' } } },
             { $sort: { _id: 1 } }
         ]);
-        
+
         res.json({
             success: true,
             data: {
@@ -203,7 +168,7 @@ router.get('/dashboard', async (req, res) => {
                     newsletterSubscriptions: newsletterSubs,
                     contactMessages,
                     cvDownloads,
-                    conversionRate: totalVisitors > 0 ? ((hireRequests / totalVisitors) * 100).toFixed(2) : 0
+                    conversionRate: totalVisitors ? ((hireRequests / totalVisitors) * 100).toFixed(2) : 0
                 },
                 deviceBreakdown: deviceStats,
                 topPages,
@@ -216,17 +181,17 @@ router.get('/dashboard', async (req, res) => {
     }
 });
 
-// GET /api/analytics/stats - Get quick stats
-router.get('/stats', async (req, res) => {
+// GET /stats
+router.get('/stats', ensureDB, async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const todayVisitors = await Analytics.countDocuments({ visitDate: { $gte: today } });
         const totalVisitors = await Analytics.countDocuments();
         const totalHires = await Analytics.countDocuments({ hiredMe: true });
         const totalNewsletterSubs = await Analytics.countDocuments({ subscribedNewsletter: true });
-        
+
         res.json({
             success: true,
             data: {
@@ -242,4 +207,3 @@ router.get('/stats', async (req, res) => {
     }
 });
 
-module.exports = router;
