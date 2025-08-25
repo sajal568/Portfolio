@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial; background:#1a1a1a; color:#fff; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .card { background:#2a2a2a; padding:32px; border-radius:16px; width:100%; max-width:420px; border:1px solid #333; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+    h1 { margin:0 0 8px; color:#ff6b35; text-align:center; }
+    p { margin:0 0 24px; color:#ccc; text-align:center; }
+    label { display:block; margin:12px 0 6px; color:#ddd; }
+    input { width:100%; padding:12px 14px; border-radius:10px; border:1px solid #444; background:#1f1f1f; color:#fff; }
+    button { width:100%; margin-top:18px; padding:12px 16px; border:none; border-radius:999px; cursor:pointer; background:linear-gradient(45deg, #ff6b35, #f7931e); color:#fff; font-weight:600; }
+    button:hover { transform: translateY(-1px); box-shadow:0 8px 20px rgba(255,107,53,.3); }
+    .error { color:#ff9494; margin-top:12px; min-height:20px; text-align:center; }
+    .footer { margin-top:16px; text-align:center; }
+    .footer a { color:#f7931e; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Admin Login</h1>
+    <p>Enter your credentials to access the dashboard.</p>
+    <form id="loginForm">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" placeholder="admin" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" placeholder="••••••••" required />
+      <button type="submit">Sign In</button>
+      <div id="error" class="error"></div>
+    </form>
+    <div class="footer">
+      <a href="/">Back to site</a>
+    </div>
+  </div>
+
+  <script>
+    let API_BASE = window.location.origin; // will be resolved via /api/health
+
+    async function resolveApiBase() {
+      // Only allow same-origin or explicit override to avoid cookie domain mismatch
+      const candidates = [];
+      const override = localStorage.getItem('API_BASE');
+      if (override) candidates.push(override);
+      candidates.push(window.location.origin);
+      for (const base of [...new Set(candidates)]) {
+        try {
+          const resp = await fetch(`${base}/api/health`, { method: 'GET' });
+          if (resp.ok) {
+            API_BASE = base;
+            // If API base is different from current host, reload on API base to keep cookies consistent
+            if (API_BASE !== window.location.origin) {
+              window.location.replace(`${API_BASE}/admin/login.html`);
+              return false; // stop further init on this origin
+            }
+            return true;
+          }
+        } catch (_) {}
+      }
+      return false;
+    }
+
+    async function alreadyLoggedIn() {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/me`, { credentials: 'include' });
+        if (res.ok) {
+          window.location.href = '/admin/dashboard.html';
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const ok = await resolveApiBase();
+      if (!ok && API_BASE !== window.location.origin) return; // a redirect was initiated
+      if (await alreadyLoggedIn()) return;
+
+      const form = document.getElementById('loginForm');
+      const errorBox = document.getElementById('error');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorBox.textContent = '';
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        try {
+          const resp = await fetch(`${API_BASE}/api/admin/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+          });
+          if (resp.ok) {
+            // Keep navigation on the same origin that set the cookie
+            window.location.href = `${API_BASE}/admin/dashboard.html`;
+          } else {
+            const data = await resp.json().catch(() => ({}));
+            errorBox.textContent = data.message || 'Invalid username or password';
+          }
+        } catch (err) {
+          errorBox.textContent = 'Login failed. Please try again.';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
