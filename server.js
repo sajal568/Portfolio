@@ -41,8 +41,9 @@ const corsOptions = {
         const allowedOrigins = [
             'http://127.0.0.1:5500',
             'http://localhost:5500',
-            'file://',
-            'https://yourdomain.com'  // Add your production domain here
+            'https://sazalshrestha.onrender.com',
+            'https://www.sazalshrestha.onrender.com',
+            'file://'
         ];
         
         if (allowedOrigins.includes(origin)) {
@@ -53,10 +54,12 @@ const corsOptions = {
         console.warn(`Blocked by CORS: ${origin}`);
         return callback(new Error('Not allowed by CORS'));
     },
-    methods: ['GET', 'POST', 'PATCH', 'OPTIONS', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     credentials: true,
-    optionsSuccessStatus: 200
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    optionsSuccessStatus: 200,
+    maxAge: 86400
 };
 
 // Apply CORS middleware
@@ -101,6 +104,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
+// Import routes
+const hireRoutes = require('./routes/hire');
+const contactRoutes = require('./routes/contact');
+const analyticsRoutes = require('./routes/analytics');
+const emailTestRoutes = require('./routes/email-test');
+const visitorSubmissionsRouter = require('./routes/visitor-submissions');
+
 // Admin auth routes (before static) - mount after parsers
 const adminRoutes = require('./routes/admin');
 const { verifyToken } = require('./middleware/authMiddleware');
@@ -133,7 +143,7 @@ if (!process.env.MONGODB_URI) {
     console.warn('⚠️  MONGODB_URI is not set. Database will be Disconnected.');
 }
 
-const startServer = async () => {
+const connectDB = async () => {
     try {
         if (process.env.MONGODB_URI) {
             const mongoUri = process.env.MONGODB_URI;
@@ -171,32 +181,31 @@ const startServer = async () => {
             } catch (seedErr) {
                 console.warn('Admin seed skipped:', seedErr?.message || seedErr);
             }
-        } else {
-            console.log('ℹ️  Starting server without MongoDB connection.');
+            return true;
         }
-
-        // Start server only after attempting DB connect
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
-            console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
-        });
+        console.log('ℹ️  Starting server without MongoDB connection.');
+        return false;
     } catch (err) {
         console.error('❌ MongoDB connection error:', err);
-        // Still start the server so /api/health can report Disconnected
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running (DB disconnected) on http://127.0.0.1:${PORT}`);
-            console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
-        });
+        return false;
     }
 };
 
-// Import routes
-const hireRoutes = require('./routes/hire');
-const contactRoutes = require('./routes/contact');
-const analyticsRoutes = require('./routes/analytics');
-const emailTestRoutes = require('./routes/email-test');
+// Start the server
+const startServer = async () => {
+    const dbConnected = await connectDB();
+    
+    // Only start the server after DB connection is attempted
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
+        console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
+        if (!dbConnected) {
+            console.warn('⚠️  Running without database connection. Some features may not work.');
+        }
+    });
+};
 
-// Use routes
+// Use routes after DB connection is established
 app.use('/api/hire', hireRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
@@ -243,5 +252,8 @@ app.use('*', (req, res) => {
     res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
-// Start server (after DB connect attempt)
-startServer();
+// Start the application
+startServer().catch(err => {
+    console.error('Fatal error during startup:', err);
+    process.exit(1);
+});
