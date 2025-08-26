@@ -42,10 +42,12 @@ const corsOptions = {
             'http://localhost:5500',
             'https://sazalshrestha.onrender.com',
             'https://www.sazalshrestha.onrender.com',
-            'file://'
+            'file://',
+            'http://localhost:3000',
+            'http://127.0.0.1:3000'
         ];
         
-        if (allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
             return callback(null, true);
         }
         
@@ -103,6 +105,19 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        node_env: process.env.NODE_ENV || 'development',
+        message: 'API is running'
+    });
+});
+
+// Handle preflight requests for all OPTIONS
+app.options('*', cors(corsOptions));
+
 // Import routes
 const hireRoutes = require('./routes/hire');
 const contactRoutes = require('./routes/contact');
@@ -110,29 +125,31 @@ const analyticsRoutes = require('./routes/analytics');
 const emailTestRoutes = require('./routes/email-test');
 const visitorSubmissionsRouter = require('./routes/visitor-submissions');
 
-// Admin auth routes (before static) - mount after parsers
+// Import admin routes
 const adminRoutes = require('./routes/admin');
 const { verifyToken } = require('./middleware/authMiddleware');
+
+// API Routes (before static files)
 app.use('/api/admin', adminRoutes);
 
-// Admin dashboard route - now handled by the static file middleware above
-
-// Serve static files
-app.use(express.static('.'));
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve admin static files with authentication check
 app.use('/admin', (req, res, next) => {
     // Skip auth check for login page and static assets
     if (req.path === '/login.html' || 
+        req.path === '/' ||
         req.path.startsWith('/css/') || 
         req.path.startsWith('/js/') ||
         req.path.startsWith('/images/')) {
         return express.static(path.join(__dirname, 'admin'))(req, res, next);
     }
     
-    // Check for admin token
-    const token = req.cookies && req.cookies['admintoken'];
+    // Check for admin token in cookies or Authorization header
+    const token = req.cookies?.admintoken || 
+                 (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+    
     if (!token) {
         return res.redirect('/admin/login.html');
     }
@@ -142,6 +159,7 @@ app.use('/admin', (req, res, next) => {
         verifyToken(token);
         return express.static(path.join(__dirname, 'admin'))(req, res, next);
     } catch (err) {
+        console.error('Token verification failed:', err.message);
         return res.redirect('/admin/login.html');
     }
 });

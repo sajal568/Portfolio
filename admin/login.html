@@ -36,79 +36,157 @@
   </div>
 
   <script>
-    let API_BASE = window.location.origin; // will be resolved via /api/health
-
+    let API_BASE = window.location.origin;
+    
+    // Try to determine the correct API base URL
     async function resolveApiBase() {
-      // Only allow same-origin or explicit override to avoid cookie domain mismatch
-      const candidates = [];
+      const candidates = [
+        window.location.origin,
+        'http://localhost:5500',
+        'https://sazalshrestha.onrender.com',
+        'http://127.0.0.1:5500'
+      ];
+      
+      // Check for override in localStorage
       const override = localStorage.getItem('API_BASE');
-      if (override) candidates.push(override);
-      candidates.push(window.location.origin);
+      if (override) candidates.unshift(override);
+
       for (const base of [...new Set(candidates)]) {
         try {
-          const resp = await fetch(`${base}/api/health`, { method: 'GET' });
-          if (resp.ok) {
-            API_BASE = base;
-            // If API base is different from current host, reload on API base to keep cookies consistent
-            if (API_BASE !== window.location.origin) {
-              window.location.replace(`${API_BASE}/admin/login.html`);
-              return false; // stop further init on this origin
+          const resp = await fetch(`${base}/api/health`, { 
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json'
             }
-            return true;
+          });
+          
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.status === 'ok') {
+              API_BASE = base;
+              console.log('Using API base:', API_BASE);
+              
+              // If we're not on the same origin, redirect to the correct one
+              if (API_BASE !== window.location.origin) {
+                const newUrl = new URL(window.location.pathname, API_BASE);
+                window.location.href = newUrl.toString();
+                return false;
+              }
+              
+              return true;
+            }
           }
-        } catch (_) {}
+        } catch (error) {
+          console.warn(`Failed to connect to ${base}:`, error);
+        }
       }
+      
+      console.error('Failed to determine API base URL. Tried:', [...new Set(candidates)].join(', '));
       return false;
     }
 
     async function alreadyLoggedIn() {
       try {
-        const stored = localStorage.getItem('ADMIN_TOKEN');
-        const headers = stored ? { 'Authorization': `Bearer ${stored}` } : {};
-        const res = await fetch(`${API_BASE}/api/admin/me`, { method: 'GET', headers, credentials: stored ? 'omit' : 'include' });
+        const token = localStorage.getItem('ADMIN_TOKEN');
+        if (!token) return false;
+        
+        const res = await fetch(`${API_BASE}/api/admin/me`, { 
+          method: 'GET', 
+          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include'
+        });
+        
         if (res.ok) {
           window.location.href = '/admin/dashboard.html';
           return true;
+        } else if (res.status === 401) {
+          // Clear invalid token
+          localStorage.removeItem('ADMIN_TOKEN');
         }
-      } catch (_) {}
+      } catch (error) {
+        console.error('Error checking login status:', error);
+      }
       return false;
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const ok = await resolveApiBase();
-      if (!ok && API_BASE !== window.location.origin) return; // a redirect was initiated
-      if (await alreadyLoggedIn()) return;
-
       const form = document.getElementById('loginForm');
       const errorBox = document.getElementById('error');
-      form.addEventListener('submit', async (e) => {
+      const submitBtn = form.querySelector('button[type="submit"]');
+      
+      // Resolve API base URL
+      const apiAvailable = await resolveApiBase();
+      if (!apiAvailable) {
+        errorBox.textContent = 'Unable to connect to the server. Please check your connection and try again.';
+        return;
+      }
+      
+      // Check if already logged in
+      if (await alreadyLoggedIn()) {
+        return;
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        errorBox.textContent = '';
+        
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
+        
+        if (!username || !password) {
+          errorBox.textContent = 'Please enter both username and password';
+          return;
+        }
+        
+        // Disable submit button during request
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing in...';
+        errorBox.textContent = '';
+        
         try {
-          const resp = await fetch(`${API_BASE}/api/admin/login`, {
+          const response = await fetch(`${API_BASE}/api/admin/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
             credentials: 'include',
             body: JSON.stringify({ username, password })
           });
-          if (resp.ok) {
-            const data = await resp.json().catch(() => ({}));
-            if (data && data.token) {
+          
+          const data = await response.json().catch(() => ({}));
+          
+          if (response.ok) {
+            if (data.token) {
               localStorage.setItem('ADMIN_TOKEN', data.token);
+              window.location.href = '/admin/dashboard.html';
+              return;
             }
             // Keep navigation on the same origin that set the cookie
-            window.location.href = `${API_BASE}/admin/dashboard.html`;
-          } else {
-            const data = await resp.json().catch(() => ({}));
-            errorBox.textContent = data.message || 'Invalid username or password';
+            window.location.href = '/admin/dashboard.html';
+            return;
           }
-        } catch (err) {
-          errorBox.textContent = 'Login failed. Please try again.';
-        }
-      });
+          
+          // Handle different error statuses
+          if (response.status === 401) {
+            errorBox.textContent = 'Invalid username or password';
+          } else if (response.status === 400) {
+            errorBox.textContent = data.message || 'Invalid request';
+          } else {
+            errorBox.textContent = data.message || 'Login failed. Please try again later.';
+          }
+      } catch (error) {
+        console.error('Login error:', error);
+        errorBox.textContent = 'Network error. Please check your connection and try again.';
+      } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+      }
     });
-  </script>
+  });
+</script>
 </body>
 </html>
