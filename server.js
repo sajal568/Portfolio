@@ -128,7 +128,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// MongoDB connection (single connect, no deprecated options)
+// MongoDB connection with better error handling
 if (!process.env.MONGODB_URI) {
     console.warn('⚠️  MONGODB_URI is not set. Database will be Disconnected.');
 }
@@ -137,10 +137,20 @@ const startServer = async () => {
     try {
         if (process.env.MONGODB_URI) {
             const mongoUri = process.env.MONGODB_URI;
-            const mongoDbName = process.env.MONGODB_DB || undefined;
-            await mongoose.connect(mongoUri, mongoDbName ? { dbName: mongoDbName } : undefined);
-            console.log(`✅ Connected to MongoDB${mongoDbName ? ` (db: ${mongoDbName})` : ''}`);
-            // Connection state logging
+            const mongoOptions = {
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                serverSelectionTimeoutMS: 5000,
+                maxPoolSize: 10
+            };
+            
+            if (process.env.MONGODB_DB) {
+                mongoOptions.dbName = process.env.MONGODB_DB;
+            }
+
+            await mongoose.connect(mongoUri, mongoOptions);
+            console.log(`✅ Connected to MongoDB${process.env.MONGODB_DB ? ` (db: ${process.env.MONGODB_DB})` : ''}`);
+            
             const conn = mongoose.connection;
             conn.on('disconnected', () => console.log('🔌 MongoDB disconnected'));
             conn.on('reconnected', () => console.log('♻️  MongoDB reconnected'));
@@ -218,14 +228,6 @@ app.get('/api/health', (req, res) => {
         readyState: state
     });
 });
-
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
