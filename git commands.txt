@@ -1,0 +1,7 @@
+GIT COMMANDS:
+
+git status
+git init
+git add .
+git remote add origin https://github.com/yourusername/your-repo.git
+git push -u origin main

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Analytics, DailySummary } = require('../models/Analytics');
 const rateLimit = require('express-rate-limit');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Rate limiting for analytics tracking (proxy-friendly)
 const analyticsLimit = rateLimit({
@@ -38,6 +39,43 @@ const getBrowserInfo = (userAgent) => {
     return { browser, os };
 };
 
+// Resolve client IP respecting proxies
+function getClientIP(req) {
+    const xf = (req.headers['x-forwarded-for'] || '').toString();
+    if (xf) {
+        // XFF can be a list. Take the first (original client)
+        return xf.split(',')[0].trim();
+    }
+    return (req.ip || req.connection?.remoteAddress || '').replace('::ffff:', '');
+}
+
+// Fetch geolocation for an IP using a free service (best-effort, non-blocking failure)
+async function lookupGeo(ip) {
+    try {
+        if (!ip || ip === '127.0.0.1' || ip === '::1') return { country: undefined, city: undefined };
+        // If fetch is not available (older Node), skip lookup gracefully
+        if (typeof fetch !== 'function') return { country: undefined, city: undefined };
+        const url = `https://ipapi.co/${encodeURIComponent(ip)}/json/`;
+        const resp = await fetch(url, { method: 'GET', headers: { 'User-Agent': 'portfolio-analytics/1.0' } }).catch(() => null);
+        if (!resp || !resp.ok) return { country: undefined, city: undefined };
+        const j = await resp.json().catch(() => ({}));
+        return { country: j.country_name, city: j.city };
+    } catch (_) {
+        return { country: undefined, city: undefined };
+    }
+}
+
+// Mask IP like 103.***.45.12
+function maskIP(ip) {
+    if (!ip) return '';
+    const parts = ip.split('.');
+    if (parts.length === 4) {
+        return `${parts[0]}.***.${parts[2]}.${parts[3]}`;
+    }
+    // IPv6 simple mask
+    return ip.replace(/([a-fA-F0-9]{1,4}):([a-fA-F0-9]{1,4})/,'$1:****');
+}
+
 // Middleware to ensure DB is connected
 const ensureDB = (req, res, next) => {
     if (require('mongoose').connection.readyState !== 1) {
@@ -55,9 +93,11 @@ router.post('/visit', analyticsLimit, ensureDB, async (req, res) => {
         let analytics = await Analytics.findOne({ sessionId });
 
         if (!analytics) {
+            const ip = getClientIP(req);
+            const { country, city } = await lookupGeo(ip);
             analytics = new Analytics({
                 sessionId,
-                ipAddress: req.ip,
+                ipAddress: ip,
                 userAgent,
                 device: detectDevice(userAgent),
                 browser,
@@ -65,7 +105,9 @@ router.post('/visit', analyticsLimit, ensureDB, async (req, res) => {
                 referrer,
                 utmSource,
                 utmMedium,
-                utmCampaign
+                utmCampaign,
+                country,
+                city
             });
             await analytics.save();
         }
@@ -121,7 +163,7 @@ router.post('/action', analyticsLimit, ensureDB, async (req, res) => {
 });
 
 // GET /dashboard
-router.get('/dashboard', ensureDB, async (req, res) => {
+router.get('/dashboard', authMiddleware, ensureDB, async (req, res) => {
     try {
         const { days = 30 } = req.query;
         const startDate = new Date();
@@ -158,6 +200,40 @@ router.get('/dashboard', ensureDB, async (req, res) => {
             { $sort: { _id: 1 } }
         ]);
 
+        const topCountries = await Analytics.aggregate([
+            { $match: { visitDate: { $gte: startDate }, country: { $ne: null } } },
+            { $group: { _id: '$country', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 }
+        ]);
+
+        const topCities = await Analytics.aggregate([
+            { $match: { visitDate: { $gte: startDate }, city: { $ne: null } } },
+            { $group: { _id: '$city', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 }
+        ]);
+
+        const topBrowsers = await Analytics.aggregate([
+            { $match: { visitDate: { $gte: startDate } } },
+            { $group: { _id: '$browser', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+        ]);
+
+        const recentVisitorsDocs = await Analytics.find({ visitDate: { $gte: startDate } })
+            .sort({ lastActivity: -1 })
+            .limit(20)
+            .lean();
+        const recentVisitors = recentVisitorsDocs.map(v => ({
+            sessionId: v.sessionId,
+            ip: maskIP(v.ipAddress),
+            location: [v.city, v.country].filter(Boolean).join(', '),
+            browser: `${v.browser || 'unknown'} on ${v.os || 'unknown'}`,
+            device: v.device,
+            referrer: v.referrer || '-',
+            timestamp: v.lastActivity || v.visitDate
+        }));
+
         res.json({
             success: true,
             data: {
@@ -172,7 +248,11 @@ router.get('/dashboard', ensureDB, async (req, res) => {
                 },
                 deviceBreakdown: deviceStats,
                 topPages,
-                dailyVisitors
+                dailyVisitors,
+                topCountries,
+                topCities,
+                topBrowsers,
+                recentVisitors
             }
         });
     } catch (error) {
@@ -182,7 +262,7 @@ router.get('/dashboard', ensureDB, async (req, res) => {
 });
 
 // GET /stats
-router.get('/stats', ensureDB, async (req, res) => {
+router.get('/stats', authMiddleware, ensureDB, async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);

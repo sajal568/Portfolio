@@ -116,6 +116,37 @@
         .page-item:last-child {
             border-bottom: none;
         }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .simple-list .page-item span:first-child {
+            max-width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #ddd;
+        }
+        thead th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+        tbody td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            font-size: 0.95rem;
+        }
+        tbody tr:hover { background: #252525; }
         
         .refresh-btn {
             background: linear-gradient(45deg, #ff6b35, #f7931e);
@@ -192,6 +223,7 @@
             <div class="charts-section">
                 <div class="chart-container">
                     <h3 class="chart-title">Device Breakdown</h3>
+                    <canvas id="deviceChart" height="180"></canvas>
                     <div class="device-stats">
                         <div class="device-item">
                             <div class="device-count" id="desktopCount">-</div>
@@ -222,6 +254,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">Top Countries</h3>
+                    <canvas id="countriesChart" height="220"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Top Browsers</h3>
+                    <canvas id="browsersChart" height="220"></canvas>
+                </div>
+            </div>
             
             <div class="top-pages">
                 <h3 class="chart-title">Top Pages</h3>
@@ -229,9 +272,92 @@
                     <!-- Pages will be loaded here -->
                 </div>
             </div>
+
+            <div class="two-col">
+                <div class="top-pages simple-list">
+                    <h3 class="chart-title">Top Countries</h3>
+                    <div id="topCountriesList"></div>
+                </div>
+                <div class="top-pages simple-list">
+                    <h3 class="chart-title">Top Cities</h3>
+                    <div id="topCitiesList"></div>
+                </div>
+            </div>
+
+            <div class="top-pages simple-list" style="margin-top: 30px;">
+                <h3 class="chart-title">Top Browsers</h3>
+                <div id="topBrowsersList"></div>
+            </div>
+
+            <div class="top-pages" style="margin-top: 30px;">
+                <h3 class="chart-title">Recent Visitors</h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Masked IP</th>
+                                <th>Location</th>
+                                <th>Browser/OS</th>
+                                <th>Device</th>
+                                <th>Referrer</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentVisitorsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="top-pages" style="margin-top: 30px;">
+                <h3 class="chart-title">Visitor Submissions</h3>
+                <div style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <select id="vsType" style="background:#2a2a2a; color:#ddd; border:1px solid #444; padding:8px; border-radius:8px;">
+                        <option value="all">All</option>
+                        <option value="contact">Contact</option>
+                        <option value="hire">Hire</option>
+                    </select>
+                    <select id="vsStatus" style="background:#2a2a2a; color:#ddd; border:1px solid #444; padding:8px; border-radius:8px;">
+                        <option value="">Any status</option>
+                        <option value="new">new</option>
+                        <option value="read">read</option>
+                        <option value="replied">replied</option>
+                        <option value="archived">archived</option>
+                        <option value="reviewed">reviewed</option>
+                        <option value="contacted">contacted</option>
+                        <option value="in-progress">in-progress</option>
+                        <option value="completed">completed</option>
+                        <option value="declined">declined</option>
+                    </select>
+                    <input id="vsSearch" placeholder="Search name, email, subject..." style="flex:1; min-width:200px; background:#2a2a2a; color:#ddd; border:1px solid #444; padding:8px; border-radius:8px;" />
+                    <input type="date" id="vsStart" style="background:#2a2a2a; color:#ddd; border:1px solid #444; padding:8px; border-radius:8px;" />
+                    <input type="date" id="vsEnd" style="background:#2a2a2a; color:#ddd; border:1px solid #444; padding:8px; border-radius:8px;" />
+                    <button class="refresh-btn" id="vsReload">Load</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Name / Email</th>
+                                <th>Subject</th>
+                                <th>Message</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vsBody"></tbody>
+                    </table>
+                </div>
+                <div id="vsPager" style="text-align:center; margin-top:10px;">
+                    <button id="vsPrev" class="refresh-btn" style="padding:8px 16px; display:inline-block;">Prev</button>
+                    <span id="vsPageInfo" style="margin:0 10px; color:#ccc;"></span>
+                    <button id="vsNext" class="refresh-btn" style="padding:8px 16px; display:inline-block;">Next</button>
+                </div>
+            </div>
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Resolve API base so this page works reliably and cookies match the API origin
         let API_BASE = window.location.origin;
@@ -285,7 +411,9 @@
                 }
 
                 // Load dashboard data
-                const response = await fetch(`${API_URL}/dashboard?days=30`);
+                const token = localStorage.getItem('ADMIN_TOKEN');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const response = await fetch(`${API_URL}/dashboard?days=30`, { headers, credentials: token ? 'omit' : 'include' });
                 const data = await safeJson(response);
                 
                 if (data.success) {
@@ -293,7 +421,7 @@
                 }
                 
                 // Load quick stats
-                const statsResponse = await fetch(`${API_URL}/stats`);
+                const statsResponse = await fetch(`${API_URL}/stats`, { headers, credentials: token ? 'omit' : 'include' });
                 const statsData = await safeJson(statsResponse);
                 
                 if (statsData.success) {
@@ -306,8 +434,11 @@
             }
         }
         
+        // Keep references to charts to allow re-render on refresh
+        let charts = { device: null, countries: null, browsers: null };
+
         function updateDashboard(data) {
-            const { summary, deviceBreakdown, topPages } = data;
+            const { summary, deviceBreakdown, topPages, topCountries, topCities, topBrowsers, recentVisitors } = data;
             
             // Update summary stats
             document.getElementById('totalVisitors').textContent = summary.totalVisitors;
@@ -326,6 +457,7 @@
             document.getElementById('desktopCount').textContent = devices.desktop;
             document.getElementById('mobileCount').textContent = devices.mobile;
             document.getElementById('tabletCount').textContent = devices.tablet;
+            renderCharts({ devices, topCountries, topBrowsers });
             
             // Update top pages
             const topPagesList = document.getElementById('topPagesList');
@@ -340,9 +472,138 @@
                 `;
                 topPagesList.appendChild(pageItem);
             });
+
+            // Top countries
+            const topCountriesList = document.getElementById('topCountriesList');
+            topCountriesList.innerHTML = '';
+            (topCountries || []).forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'page-item';
+                el.innerHTML = `
+                    <span>${item._id || 'Unknown'}</span>
+                    <span>${item.count}</span>
+                `;
+                topCountriesList.appendChild(el);
+            });
+
+            // Top cities
+            const topCitiesList = document.getElementById('topCitiesList');
+            topCitiesList.innerHTML = '';
+            (topCities || []).forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'page-item';
+                el.innerHTML = `
+                    <span>${item._id || 'Unknown'}</span>
+                    <span>${item.count}</span>
+                `;
+                topCitiesList.appendChild(el);
+            });
+
+            // Top browsers
+            const topBrowsersList = document.getElementById('topBrowsersList');
+            topBrowsersList.innerHTML = '';
+            (topBrowsers || []).forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'page-item';
+                el.innerHTML = `
+                    <span>${item._id || 'Unknown'}</span>
+                    <span>${item.count}</span>
+                `;
+                topBrowsersList.appendChild(el);
+            });
+
+            // Recent visitors
+            const tbody = document.getElementById('recentVisitorsBody');
+            tbody.innerHTML = '';
+            (recentVisitors || []).forEach(v => {
+                const tr = document.createElement('tr');
+                const dt = v.timestamp ? new Date(v.timestamp) : null;
+                tr.innerHTML = `
+                    <td>${v.ip || ''}</td>
+                    <td>${v.location || ''}</td>
+                    <td>${v.browser || ''}</td>
+                    <td>${v.device || ''}</td>
+                    <td title="${v.referrer}">${(v.referrer || '').slice(0, 40)}</td>
+                    <td>${dt ? dt.toLocaleString() : ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
             
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'block';
+        }
+
+        function renderCharts({ devices, topCountries, topBrowsers }) {
+            // Destroy existing instances
+            try { charts.device && charts.device.destroy(); } catch(_) {}
+            try { charts.countries && charts.countries.destroy(); } catch(_) {}
+            try { charts.browsers && charts.browsers.destroy(); } catch(_) {}
+
+            const deviceCtx = document.getElementById('deviceChart')?.getContext('2d');
+            if (deviceCtx && window.Chart) {
+                charts.device = new Chart(deviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Desktop', 'Mobile', 'Tablet'],
+                        datasets: [{
+                            data: [devices.desktop || 0, devices.mobile || 0, devices.tablet || 0],
+                            backgroundColor: ['#4e79a7', '#f28e2b', '#e15759'],
+                            borderColor: '#222',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { labels: { color: '#ddd' } } },
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            const countryCtx = document.getElementById('countriesChart')?.getContext('2d');
+            const top10Countries = (topCountries || []).slice(0, 10);
+            if (countryCtx && window.Chart) {
+                charts.countries = new Chart(countryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: top10Countries.map(c => c._id || 'Unknown'),
+                        datasets: [{
+                            label: 'Visitors',
+                            data: top10Countries.map(c => c.count || 0),
+                            backgroundColor: '#59a14f'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: { ticks: { color: '#ccc' } },
+                            y: { ticks: { color: '#ccc' }, beginAtZero: true }
+                        },
+                        plugins: { legend: { labels: { color: '#ddd' } } },
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            const browserCtx = document.getElementById('browsersChart')?.getContext('2d');
+            const top7Browsers = (topBrowsers || []).slice(0, 7);
+            if (browserCtx && window.Chart) {
+                charts.browsers = new Chart(browserCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: top7Browsers.map(b => b._id || 'Unknown'),
+                        datasets: [{
+                            data: top7Browsers.map(b => b.count || 0),
+                            backgroundColor: ['#edc948', '#af7aa1', '#76b7b2', '#59a14f', '#e15759', '#4e79a7', '#f28e2b']
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { labels: { color: '#ddd' } } },
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
         }
         
         function updateQuickStats(data) {
@@ -350,13 +611,79 @@
             document.getElementById('cvDownloads').textContent = data.totalNewsletterSubscriptions; // Using newsletter as CV downloads for now
         }
         
+        // Visitor Submissions state and functions
+        let VS_PAGE = 1;
+        const VS_LIMIT = 20;
+
+        function getVsHeaders() {
+            const token = localStorage.getItem('ADMIN_TOKEN');
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
+
+        async function loadVisitorSubmissions() {
+            try {
+                const type = document.getElementById('vsType')?.value || 'all';
+                const status = document.getElementById('vsStatus')?.value || '';
+                const q = document.getElementById('vsSearch')?.value?.trim() || '';
+                const start = document.getElementById('vsStart')?.value || '';
+                const end = document.getElementById('vsEnd')?.value || '';
+                const params = new URLSearchParams();
+                if (type && type !== 'all') params.set('type', type);
+                if (status) params.set('status', status);
+                if (q) params.set('q', q);
+                if (start) params.set('startDate', start);
+                if (end) params.set('endDate', end);
+                params.set('limit', String(VS_LIMIT));
+                params.set('page', String(VS_PAGE));
+
+                const url = `${API_BASE}/api/admin/visitor-submissions?` + params.toString();
+                const res = await fetch(url, { headers: getVsHeaders(), credentials: 'omit' });
+                const json = await safeJson(res);
+                renderVisitorSubmissions(json.data || [], json.pagination || { total: 0, page: 1, pages: 1 });
+            } catch (e) {
+                console.error('Failed to load visitor submissions:', e);
+                renderVisitorSubmissions([], { total: 0, page: 1, pages: 1 });
+            }
+        }
+
+        function renderVisitorSubmissions(items, pagination) {
+            const tbody = document.getElementById('vsBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            items.forEach(it => {
+                const tr = document.createElement('tr');
+                const created = it.createdAt ? new Date(it.createdAt).toLocaleString() : '';
+                const subj = (it.subject || '').toString();
+                const msg = (it.message || '').toString();
+                tr.innerHTML = `
+                    <td>${it.type}</td>
+                    <td><div>${it.name || ''}</div><div style="color:#aaa; font-size:0.9em;">${it.email || ''}</div></td>
+                    <td title="${subj}">${subj.slice(0, 40)}</td>
+                    <td title="${msg}">${msg.slice(0, 60)}</td>
+                    <td>${created}</td>
+                    <td>${it.status || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const pageInfo = document.getElementById('vsPageInfo');
+            if (pageInfo) pageInfo.textContent = `Page ${pagination.page} of ${pagination.pages} (${pagination.total} total)`;
+
+            const prev = document.getElementById('vsPrev');
+            const next = document.getElementById('vsNext');
+            if (prev) prev.disabled = pagination.page <= 1;
+            if (next) next.disabled = pagination.page >= pagination.pages;
+        }
+
         // Load dashboard on page load and wire up events without inline handlers
         document.addEventListener('DOMContentLoaded', async () => {
             const ok = await resolveApiBase();
             if (!ok && API_BASE !== window.location.origin) return; // a redirect was initiated
             // Auth guard: ensure admin session is valid on the same API base; if not, go to that base's login
             try {
-                const me = await fetch(`${API_BASE}/api/admin/me`, { credentials: 'include' });
+                const token = localStorage.getItem('ADMIN_TOKEN');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const me = await fetch(`${API_BASE}/api/admin/me`, { method: 'GET', headers, credentials: token ? 'omit' : 'include' });
                 if (!me.ok) {
                     window.location.href = `${API_BASE}/admin/login.html`;
                     return;
@@ -368,6 +695,13 @@
             loadDashboard();
             const btn = document.getElementById('refreshBtn');
             if (btn) btn.addEventListener('click', loadDashboard);
+
+            // Wire up Visitor Submissions controls
+            document.getElementById('vsReload')?.addEventListener('click', () => { VS_PAGE = 1; loadVisitorSubmissions(); });
+            document.getElementById('vsPrev')?.addEventListener('click', () => { if (VS_PAGE > 1) { VS_PAGE -= 1; loadVisitorSubmissions(); } });
+            document.getElementById('vsNext')?.addEventListener('click', () => { VS_PAGE += 1; loadVisitorSubmissions(); });
+            // Immediate initial load
+            loadVisitorSubmissions();
         });
         
         // Auto-refresh every 5 minutes

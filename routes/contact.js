@@ -11,10 +11,12 @@ const contactLimit = rateLimit({
     message: { error: 'Too many contact requests. Please try again later.' }
 });
 
+const { Analytics } = require('../models/Analytics');
+
 // POST /api/contact - Submit contact form
 router.post('/', contactLimit, async (req, res) => {
     try {
-        const { name, email, subject, message } = req.body;
+        const { name, email, subject, message, sessionId } = req.body;
 
         // Create new contact
         const contact = new Contact({
@@ -28,6 +30,26 @@ router.post('/', contactLimit, async (req, res) => {
 
         // Save to database
         const savedContact = await contact.save();
+
+        // Link to analytics session if provided
+        if (sessionId) {
+            try {
+                await Analytics.findOneAndUpdate(
+                    { sessionId },
+                    {
+                        $set: {
+                            name: name || undefined,
+                            email: email || undefined,
+                            contactedMe: true,
+                            contactId: savedContact._id,
+                            lastActivity: new Date()
+                        }
+                    }
+                );
+            } catch (linkErr) {
+                console.warn('Analytics link (contact) failed:', linkErr.message);
+            }
+        }
 
         // Send email notifications
         try {

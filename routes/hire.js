@@ -3,6 +3,7 @@ const router = express.Router();
 const HireRequest = require('../models/HireRequest');
 const rateLimit = require('express-rate-limit');
 const emailService = require('../utils/emailService');
+const { Analytics } = require('../models/Analytics');
 
 // Rate limiting for hire requests
 const hireLimit = rateLimit({
@@ -24,7 +25,8 @@ router.post('/', hireLimit, async (req, res) => {
             budget,
             timeline,
             additionalInfo,
-            newsletter
+            newsletter,
+            sessionId
         } = req.body;
 
         // Create new hire request
@@ -45,6 +47,27 @@ router.post('/', hireLimit, async (req, res) => {
 
         // Save to database
         const savedRequest = await hireRequest.save();
+
+        // Link to analytics session if provided
+        if (sessionId) {
+            try {
+                const $set = {
+                    name: name || undefined,
+                    email: email || undefined,
+                    hireRequestId: savedRequest._id,
+                    lastActivity: new Date()
+                };
+                if (newsletter === true) {
+                    $set.subscribedNewsletter = true;
+                }
+                await Analytics.findOneAndUpdate(
+                    { sessionId },
+                    { $set }
+                );
+            } catch (linkErr) {
+                console.warn('Analytics link (hire) failed:', linkErr.message);
+            }
+        }
 
         // Send email notification
         try {

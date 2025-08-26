@@ -1,36 +1,14 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Admin = require('../models/Admin');
+const { authMiddleware, signToken, setAuthCookie, verifyToken, COOKIE_NAME } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-const COOKIE_NAME = 'admintoken';
-const JWT_TTL_SECONDS = 60 * 60 * 8; // 8 hours
-const isProd = process.env.NODE_ENV === 'production';
-
-function signToken(payload) {
-  const secret = process.env.JWT_SECRET || 'dev_insecure_secret_change_me';
-  return jwt.sign(payload, secret, { expiresIn: JWT_TTL_SECONDS });
-}
-
-function verifyToken(token) {
-  const secret = process.env.JWT_SECRET || 'dev_insecure_secret_change_me';
-  return jwt.verify(token, secret);
-}
-
-// Middleware to authenticate admin via cookie
-function authMiddleware(req, res, next) {
-  const token = req.cookies && req.cookies[COOKIE_NAME];
-  if (!token) return res.status(401).json({ success: false, message: 'Unauthorized' });
-  try {
-    const decoded = verifyToken(token);
-    req.admin = decoded;
-    next();
-  } catch (e) {
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
-  }
-}
+// GET /ping
+router.get('/ping', (req, res) => {
+  res.json({ success: true, message: 'router ok' });
+});
 
 // POST /api/admin/login
 router.post('/login', async (req, res) => {
@@ -46,29 +24,33 @@ router.post('/login', async (req, res) => {
     if (!ok) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
     const token = signToken({ id: admin._id.toString(), username: admin.username });
-    res.cookie(COOKIE_NAME, token, {
-      httpOnly: true,
-      sameSite: isProd ? 'none' : 'lax',
-      secure: isProd,
-      path: '/',
-      maxAge: JWT_TTL_SECONDS * 1000
-    });
-    return res.json({ success: true });
+    // Set httpOnly cookie for backward compatibility
+    setAuthCookie(res, token);
+    // Also return token in body for SPA Authorization headers
+    return res.json({ success: true, token });
   } catch (err) {
     console.error('Admin login error:', err);
     return res.status(500).json({ success: false, message: 'Login failed' });
   }
 });
 
+// GET /api/admin/ping (no auth) - quick mount check
+router.get('/ping', (req, res) => {
+  res.json({ success: true, message: 'admin router ok' });
+});
+
 // GET /api/admin/me
 router.get('/me', authMiddleware, async (req, res) => {
-  return res.json({ success: true, admin: { username: req.admin.username } });
+  const user = req.user || req.admin;
+  return res.json({ success: true, admin: { username: user.username } });
 });
 
 // POST /api/admin/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie(COOKIE_NAME, { path: '/', sameSite: isProd ? 'none' : 'lax', secure: isProd });
+  res.clearCookie(COOKIE_NAME, { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', secure: process.env.NODE_ENV === 'production', httpOnly: true });
   return res.json({ success: true });
 });
 
-module.exports = { router, authMiddleware, verifyToken };
+module.exports = router;
+// Also expose named export for compatibility with old import style `{ router } = require('./routes/admin')`
+module.exports.router = router;

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Form Submission</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        #output {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border: 1px solid #334155;
+        }
+        .success {
+            color: #4ade80;
+        }
+        .error {
+            color: #f87171;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Form Submission</h1>
+    <button onclick="submitForm()">Test Submit</button>
+    <div>
+        <h3>Console Output:</h3>
+        <div id="output">Click the button to test the API endpoint...</div>
+    </div>
+
+    <script>
+        // Redirect console.log to the page
+        (function() {
+            const output = document.getElementById('output');
+            
+            function logToScreen(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = type;
+                line.textContent = '> ' + message;
+                output.appendChild(line);
+                output.scrollTop = output.scrollHeight;
+            }
+            
+            // Override console methods
+            console.log = function() {
+                const message = Array.from(arguments).join(' ');
+                logToScreen(message, 'info');
+            };
+            
+            console.error = function() {
+                const message = 'ERROR: ' + Array.from(arguments).join(' ');
+                logToScreen(message, 'error');
+            };
+        })();
+
+        async function submitForm() {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Sending request to server...\n';
+            
+            const formData = {
+                name: "Test User",
+                email: "test@example.com",
+                purpose: "general"
+            };
+
+            try {
+                console.log('Sending request to server...');
+                console.log('URL:', 'http://localhost:5500/api/visitor-submissions');
+                console.log('Method: POST');
+                console.log('Headers:', {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                });
+                console.log('Body:', formData);
+                
+                const startTime = Date.now();
+                const response = await fetch('http://localhost:5500/api/visitor-submissions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                console.log('\n--- Response ---');
+                console.log(`Status: ${response.status} ${response.statusText}`);
+                console.log(`Time: ${responseTime}ms`);
+                
+                // Log response headers
+                console.log('\nResponse Headers:');
+                response.headers.forEach((value, key) => {
+                    console.log(`${key}: ${value}`);
+                });
+                
+                const text = await response.text();
+                console.log('\nResponse Body:');
+                console.log(text);
+                
+                try {
+                    const data = JSON.parse(text);
+                    console.log('\nParsed JSON:');
+                    console.log(JSON.stringify(data, null, 2));
+                } catch (e) {
+                    console.error('Failed to parse JSON:', e.message);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                console.log('\n✅ Request successful!');
+            } catch (error) {
+                console.error('\n❌ Request failed:', error.message);
+                if (error.response) {
+                    console.error('Response status:', error.response.status);
+                    console.error('Response text:', await error.response.text());
+                }
+            }
+        }
+    </script>
+</body>
+</html>

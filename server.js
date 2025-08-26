@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
+const visitorSubmissionsRouter = require('./routes/visitor-submissions');
 
 const app = express();
 // Trust the first proxy (Render)
@@ -20,7 +21,7 @@ app.use(helmet({
         useDefaults: true,
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
             imgSrc: ["'self'", 'data:'],
             fontSrc: ["'self'", 'https://cdnjs.cloudflare.com', 'data:'],
@@ -30,11 +31,61 @@ app.use(helmet({
         },
     },
 }));
-app.use(cors({
-    origin: ['http://127.0.0.1:5500', 'file://'],
-    credentials: true
-}));
-app.options('*', cors());
+
+// CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = [
+            'http://127.0.0.1:5500',
+            'http://localhost:5500',
+            'file://',
+            'https://yourdomain.com'  // Add your production domain here
+        ];
+        
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        
+        // For development, you might want to log blocked origins
+        console.warn(`Blocked by CORS: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PATCH', 'OPTIONS', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Parse JSON bodies (built into Express 4.16+)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Add headers before the routes are defined
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
+    next();
+});
 
 // Rate limiting (respects X-Forwarded-For via trust proxy)
 app.use(rateLimit({
@@ -50,8 +101,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Admin auth routes (before static)
-const { router: adminRoutes, authMiddleware, verifyToken } = require('./routes/admin');
+// Admin auth routes (before static) - mount after parsers
+const adminRoutes = require('./routes/admin');
+const { verifyToken } = require('./middleware/authMiddleware');
 app.use('/api/admin', adminRoutes);
 
 // Protect admin dashboard HTML with redirect instead of JSON 401
@@ -139,6 +191,7 @@ app.use('/api/hire', hireRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/email', emailTestRoutes);
+app.use('/api/visitor-submissions', visitorSubmissionsRouter);
 
 // CV download route
 const CV_PATH = path.join(__dirname, 'public', 'cv', 'resume.pdf');
@@ -165,6 +218,14 @@ app.get('/api/health', (req, res) => {
         readyState: state
     });
 });
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

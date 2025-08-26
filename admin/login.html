@@ -63,7 +63,9 @@
 
     async function alreadyLoggedIn() {
       try {
-        const res = await fetch(`${API_BASE}/api/admin/me`, { credentials: 'include' });
+        const stored = localStorage.getItem('ADMIN_TOKEN');
+        const headers = stored ? { 'Authorization': `Bearer ${stored}` } : {};
+        const res = await fetch(`${API_BASE}/api/admin/me`, { method: 'GET', headers, credentials: stored ? 'omit' : 'include' });
         if (res.ok) {
           window.location.href = '/admin/dashboard.html';
           return true;
@@ -92,6 +94,10 @@
             body: JSON.stringify({ username, password })
           });
           if (resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            if (data && data.token) {
+              localStorage.setItem('ADMIN_TOKEN', data.token);
+            }
             // Keep navigation on the same origin that set the cookie
             window.location.href = `${API_BASE}/admin/dashboard.html`;
           } else {

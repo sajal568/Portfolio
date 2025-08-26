@@ -61,6 +61,12 @@ window.addEventListener('scroll', () => {
 // Add loading animation
 window.addEventListener('load', () => {
     document.body.style.opacity = '1';
+    const siteLoader = document.getElementById('siteLoader');
+    if (siteLoader) {
+        siteLoader.style.transition = 'opacity 0.3s ease';
+        siteLoader.style.opacity = '0';
+        setTimeout(() => { siteLoader.style.display = 'none'; }, 300);
+    }
 });
 
 // Helper: POST with fallback API bases
@@ -365,6 +371,7 @@ const initContactForm = () => {
             const subject = 'New contact request from portfolio';
             const message = `Please reach out to me at ${email}.`;
             const payload = { name, email, subject, message };
+            try { payload.sessionId = window.portfolioAnalytics?.sessionId; } catch(_) {}
             const resp = await postWithFallback('/api/contact', payload);
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok || data?.success === false) {
@@ -641,6 +648,7 @@ const initHireForm = () => {
         const mt = mapTimeline(timelineRaw);
         if (mb) payload.budget = mb;
         if (mt) payload.timeline = mt;
+        try { payload.sessionId = window.portfolioAnalytics?.sessionId; } catch(_) {}
 
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
 
