@@ -115,22 +115,36 @@ const adminRoutes = require('./routes/admin');
 const { verifyToken } = require('./middleware/authMiddleware');
 app.use('/api/admin', adminRoutes);
 
-// Protect admin dashboard HTML with redirect instead of JSON 401
-app.get('/admin/dashboard.html', (req, res) => {
-    try {
-        const token = req.cookies && req.cookies['admintoken'];
-        if (!token) return res.redirect('/admin/login.html');
-        verifyToken(token); // throws if invalid/expired
-        return res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
-    } catch (_) {
-        return res.redirect('/admin/login.html');
-    }
-});
+// Admin dashboard route - now handled by the static file middleware above
 
 // Serve static files
 app.use(express.static('.'));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
+
+// Serve admin static files with authentication check
+app.use('/admin', (req, res, next) => {
+    // Skip auth check for login page and static assets
+    if (req.path === '/login.html' || 
+        req.path.startsWith('/css/') || 
+        req.path.startsWith('/js/') ||
+        req.path.startsWith('/images/')) {
+        return express.static(path.join(__dirname, 'admin'))(req, res, next);
+    }
+    
+    // Check for admin token
+    const token = req.cookies && req.cookies['admintoken'];
+    if (!token) {
+        return res.redirect('/admin/login.html');
+    }
+    
+    // Verify token
+    try {
+        verifyToken(token);
+        return express.static(path.join(__dirname, 'admin'))(req, res, next);
+    } catch (err) {
+        return res.redirect('/admin/login.html');
+    }
+});
 
 // Root route -> index.html
 app.get('/', (req, res) => {
