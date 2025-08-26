@@ -7,7 +7,6 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
-const visitorSubmissionsRouter = require('./routes/visitor-submissions');
 
 const app = express();
 // Trust the first proxy (Render)
