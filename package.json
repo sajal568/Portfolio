@@ -5,12 +5,6 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "clean": "rimraf dist",
-    "minify-html": "html-minifier-terser --collapse-whitespace --remove-comments --minify-css true --minify-js true index.html -o dist/index.html",
-    "minify-css": "postcss style.css -u cssnano -o dist/style.css",
-    "minify-js": "terser script.js -o dist/script.js -c -m",
-    "build": "npm run clean && mkdir dist && npm run minify-html && npm run minify-css && npm run minify-js",
-    "optimize-images": "imagemin images/--plugin=mozjpeg --plugin=pngquant --plugin=webp --out-dir=dist/images",
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -38,11 +32,6 @@
   },
   "devDependencies": {
     "html-minifier-terser": "^7.2.0",
-    "imagemin-cli": "^8.0.0",
-    "imagemin-mozjpeg": "^10.0.0",
-    "imagemin-pngquant": "^10.0.0",
-    "imagemin-webp": "^8.0.0",
-    "nodemon": "^3.0.1",
-    "rimraf": "^6.0.1"
+    "nodemon": "^3.0.1"
   }
 }
