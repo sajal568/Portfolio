@@ -161,8 +161,6 @@ const connectDB = async () => {
         if (process.env.MONGODB_URI) {
             const mongoUri = process.env.MONGODB_URI;
             const mongoOptions = {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
                 serverSelectionTimeoutMS: 5000,
                 maxPoolSize: 10
             };
