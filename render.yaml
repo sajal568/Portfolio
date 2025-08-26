@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: sazalshrestha
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+    plan: free
+    autoDeploy: true

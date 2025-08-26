@@ -234,12 +234,37 @@ const startServer = async () => {
     });
 };
 
-// Use routes after DB connection is established
+// Configure static file serving with proper MIME types
+const staticOptions = {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.set('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.set('Content-Type', 'application/javascript');
+        } else if (path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            res.set('Content-Type', 'image/' + path.split('.').pop().toLowerCase());
+        }
+    }
+};
+
+// Serve static files from multiple directories
+app.use(express.static(path.join(__dirname, 'public'), staticOptions));
+app.use(express.static(path.join(__dirname, 'images'), staticOptions));
+app.use(express.static(path.join(__dirname, 'css'), staticOptions));
+app.use(express.static(path.join(__dirname, 'js'), staticOptions));
+app.use(express.static(path.join(__dirname), staticOptions));
+
+// API Routes
 app.use('/api/hire', hireRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/email', emailTestRoutes);
 app.use('/api/visitor-submissions', visitorSubmissionsRouter);
+
+// Serve index.html for all other routes to support SPA routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // CV download route
 const CV_PATH = path.join(__dirname, 'public', 'cv', 'resume.pdf');
